@@ -46,7 +46,7 @@ public class AuthController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String,String>> register(@RequestBody Map<String, String> payload, HttpServletRequest request, HttpSession httpSession) throws TypeValidationException, UserAlreadyExistException {
+    public ResponseEntity<Map<String,String>> register(@RequestBody Map<String, String> payload, HttpServletRequest request, HttpSession httpSession) throws TypeValidationException, UserAlreadyExistException, IOException {
         String username = payload.get("username");
         String password = payload.get("password");
         LOGGER.info("Register request received for user: {}", username);

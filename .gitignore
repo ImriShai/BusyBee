@@ -7,3 +7,4 @@ out/
 *.iws
 src/main/resources/keystore.p12
 src/main/resources/ssl.properties
+src/main/java/com/securefromscratch/busybee/auth/users.txt

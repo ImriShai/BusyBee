@@ -56,7 +56,10 @@ document.addEventListener('DOMContentLoaded', async function () {
             } else if (response.status === 401) {
                 const errorData = await response.json();
                 showError(errorData.error);
-            } else {
+            } else if (response.status === 409){
+                showError("Username already exists");
+            }
+            else {
                 showError('Unexpected error occurred. Please try again.');
             }
         } catch (error) {

@@ -1,4 +1,4 @@
-package com.securefromscratch.busybee.controllers;
+package com.securefromscratch.busybee.controllers.Advices;
 
 import com.securefromscratch.busybee.exceptions.*;
 import org.owasp.safetypes.exception.TypeValidationException;
@@ -164,6 +164,18 @@ public class GlobalExceptionHandler {
         response.put("error", "Access denied");
         response.put("message", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalStateException(IllegalStateException ex, WebRequest request) {
+        if(ex.getCause() instanceof UserAlreadyExistException) {
+           return handleUserAlreadyExistException((UserAlreadyExistException) ex.getCause(), request);
+        }
+        LOGGER.error("Illegal state: {}", ex.getMessage());
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Illegal state");
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     // Handle all other exceptions

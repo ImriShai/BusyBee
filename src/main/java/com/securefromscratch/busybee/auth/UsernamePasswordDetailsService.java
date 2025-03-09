@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.Optional;
 
 @Service
@@ -33,7 +34,7 @@ public class UsernamePasswordDetailsService implements UserDetailsService {
                 .build();
     }
 
-    public UserAccount createUser(String username, String password) throws TypeValidationException, UserAlreadyExistException {
+    public UserAccount createUser(String username, String password) throws TypeValidationException, UserAlreadyExistException, IOException {
         return m_usersStorage.createUser(username, password);
     }
 }

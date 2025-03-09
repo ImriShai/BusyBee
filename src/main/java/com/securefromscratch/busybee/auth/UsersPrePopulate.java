@@ -13,14 +13,15 @@ import java.util.UUID;
 @Component
 public class UsersPrePopulate {
     @Bean
-    CommandLineRunner createUser(UsernamePasswordDetailsService usersDetails, PasswordEncoder passwordEncoder) {
+    CommandLineRunner createUser(UsernamePasswordDetailsService usersDetails, UsersStorage usersStorage) {
         return args -> {
+
+            if(usersStorage.hasUsers()) {
+                return;
+            }
+
             String username = "Imri";
-
             String plainPassword = "1234";
-
-
-
             UserAccount newAccount;
             try {
                 newAccount = usersDetails.createUser(username, plainPassword);
