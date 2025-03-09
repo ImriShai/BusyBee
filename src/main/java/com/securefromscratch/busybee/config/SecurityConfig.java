@@ -16,6 +16,8 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
 import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
@@ -28,16 +30,17 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/public/**", "index.html").permitAll() // Allow static resources
                         .anyRequest().authenticated()
+
                 )
                 .formLogin(form -> form
-                        .defaultSuccessUrl("/main/main.html")
+                        .defaultSuccessUrl("/main.html")
                         .permitAll()
                 )
 
 
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/h2-console/**")
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrf(csrf -> csrf.disable()
+//                        .ignoringRequestMatchers("/h2-console/**")
+//                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 )
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
@@ -50,4 +53,6 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
+
+
 }

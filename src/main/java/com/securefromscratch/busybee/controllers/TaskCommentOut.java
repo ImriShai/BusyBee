@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-public record TaskCommentOut(UUID commentid, String text, Optional<String> image, Optional<String> attachment, int indent, String createdBy, LocalDateTime createdOn) {
+public record TaskCommentOut(UUID commentid, String text, Optional<String> image, Optional<String> attachment, int indent, String createdBy, LocalDateTime createdOn, Optional<String> originalFilename) {
     static TaskCommentOut fromComment(TaskComment c) {
         return new TaskCommentOut(
                 c.commentId(),
@@ -14,8 +14,9 @@ public record TaskCommentOut(UUID commentid, String text, Optional<String> image
                 c.image(),
                 c.attachment(),
                 c.indent(),
-                c.createdBy(),
-                c.createdOn()
+                c.createdBy().toString(),
+                c.createdOn(),
+                c.originalFilename()
         );
     }
 }

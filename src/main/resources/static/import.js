@@ -11,7 +11,7 @@ document.getElementById("importForm").onsubmit = async function(event) {
         const response = await sendPost("/extra/import", formData);
         if (response.ok) {
             alert("Tasks imported successfully!");
-            window.location.href = "index.html";
+            window.location.href = "main.html";
         } else {
             const errorMessage = await response.text();
             alert("Failed to import tasks: " + errorMessage);

@@ -23,8 +23,10 @@ function submitTask() {
     sendPost("/create", taskData)
     .then(response => {
         if (response.ok) {
-            window.location.href = "index.html";
-        } else {
+            window.location.href = "main.html";
+        } else if(response.status === 409) {
+            alert("Task with this name already exists.");}
+            else{
             alert("Failed to add task. Please try again.");
         }
     })

@@ -9,7 +9,7 @@ version = "0.0.1-SNAPSHOT"
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(19)
+		languageVersion = JavaLanguageVersion.of(23)
 	}
 }
 
@@ -32,6 +32,10 @@ dependencies {
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+
+	implementation("com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20220608.1")
+	implementation("javax.annotation:javax.annotation-api:1.3.2")
 }
 
 tasks.withType<Test> {

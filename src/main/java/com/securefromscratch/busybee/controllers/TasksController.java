@@ -1,14 +1,15 @@
 package com.securefromscratch.busybee.controllers;
 
-import com.securefromscratch.busybee.safety.Description;
-import com.securefromscratch.busybee.safety.Name;
-import com.securefromscratch.busybee.storage.FileStorage;
+import com.securefromscratch.busybee.exceptions.ConflictException;
+import com.securefromscratch.busybee.safety.*;
 import com.securefromscratch.busybee.storage.Task;
+import com.securefromscratch.busybee.exceptions.TaskNotFoundException;
 import com.securefromscratch.busybee.storage.TasksStorage;
+import jakarta.validation.constraints.NotNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.Transformer;
+import org.owasp.safetypes.exception.TypeValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
@@ -16,95 +17,88 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
-@CrossOrigin(origins = "null")
+@CrossOrigin(origins = {"http://localhost:8080", "http://127.0.0.1:8080", "https://localhost:8443", "https://127.0.0.1:8443"})
 public class TasksController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TasksController.class);
 
     @Autowired
     private TasksStorage m_tasks;
-    private FileStorage m_files = new FileStorage(Path.of("Skeleton/uploads"));
 
     public TasksController() throws IOException {
+        // Use an absolute path or ensure the relative path is correct
+        Path uploadPath = Path.of("uploads").toAbsolutePath();
     }
 
-    // Request: No arguments
-    // Expected Response: [
-    //    {
-    //       "taskid": "<UUID>",
-    //       "name": "<name>",
-    //       "desc": "<desc>",
-    //       "dueDate": "<date>",  // this is optional
-    //       "dueTime": "<time>",  // this is optional
-    //       "createdBy": "<name of user>",
-    //       "responsibilityOf": [ "<user1">, "<user2>", ...],
-    //       "creationDatetime": "<date+time>",
-    //       "done": false/true,
-    //       "comments": [ { comment1 }, { comment2 }, ... ] (see TaskCommentOut for fields)
-    //    }, ...
-    // ]
     @GetMapping("/tasks")
     public Collection<TaskOut> getTasks() {
         List<Task> allTasks = m_tasks.getAll();
-        Transformer<Task, TaskOut> transformer = t-> TaskOut.fromTask((Task)t);
+        Transformer<Task, TaskOut> transformer = t -> TaskOut.fromTask((Task) t);
         return CollectionUtils.collect(allTasks, transformer);
     }
 
-    // Request: { "taskid": "<uuid>" }
-    // Expected Response: { "success": true/false }
-    record MarkDoneRequest(UUID taskid) {}
-    record MarkDoneResponse(boolean success) {}
+    public record MarkDoneRequest(@NotNull UUID taskid) {}
+    public record MarkDoneResponse(boolean success) {}
+
     @PostMapping("/done")
-    public ResponseEntity markTaskDone(@RequestBody MarkDoneRequest request) {
-        try {
-            boolean oldValue = m_tasks.markDone(request.taskid());
-            return ResponseEntity.ok(new MarkDoneResponse(!oldValue));
-        } catch (Exception e) {
-            LOGGER.error("Failed to mark task as done", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
+    public ResponseEntity<MarkDoneResponse> markTaskDone(@RequestBody MarkDoneRequest request) throws IOException {
+        // Validate that the taskid is a legal UUID
+        UUID taskId = UUID.fromString(request.taskid().toString());
+
+        // Check if the task exists, return 404 if not
+        Optional<Task> taskOptional = m_tasks.find(request.taskid());
+        if (taskOptional.isEmpty()) {
+            throw new TaskNotFoundException(request.taskid());
         }
 
+        // Mark the task as done
+        boolean oldValue = m_tasks.markDone(request.taskid());
+        return ResponseEntity.ok(new MarkDoneResponse(!oldValue));
     }
 
-    // Request: {
-    //     "name": "<task name>",
-    //     "desc": "<description>",
-    //     "dueDate": "<date>", // or null
-    //     "dueTime": "<time>", // or null
-    //     "responsibilityOf": [ "<name1>", "<name2>", ... ]
-    // }
-    // Expected Response: { "taskid": "<uuid>" }
+    public record CreateTaskRequest(
+            Name name,
+            Description desc,
+            DueDate dueDate,
+            DueTime dueTime,
+            Username[] responsibilityOf
+    ) {}
 
-    record CreateTaskRequest(Name name, Description desc, LocalDate dueDate, LocalTime dueTime, Name[] responsibilityOf) {}
     @PostMapping("/create")
-    public ResponseEntity create(@RequestBody CreateTaskRequest request) {
-        System.out.println("Create task request: " + request);
-        try {
-            UUID taskid = m_tasks.add(request.name().get(), request.desc().get(), request.dueDate(), request.dueTime(), Arrays.stream(request.responsibilityOf()).map(Name::get).toArray(String[]::new));
-            return ResponseEntity.ok().body(taskid);
-        } catch (Exception e) {
-            LOGGER.error("Failed to create task", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+    public ResponseEntity<UUID> create(@RequestBody CreateTaskRequest request) throws TypeValidationException, IOException, ConflictException {
+        // Check if task name already exists
+        if (m_tasks.isTaskNameExists(request.name().get())) {
+            throw new ConflictException("Task name already exists: " + request.name().get());
         }
-    }
 
-    public record FileRecord(String img) {}
-    @GetMapping("/image")
-    public ResponseEntity<byte[]> getImages(FileRecord fileRecord){
-        Path p = Path.of("../uploads").toAbsolutePath();
-        try {
-            return ResponseEntity.ok().body(m_files.getBytes(fileRecord.img()));
-        }catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new byte[0]);
+        UUID taskId;
+
+        if (request.dueDate() == null) { // Due date is optional
+            taskId = m_tasks.add(
+                    request.name().get(),
+                    request.desc().get(),
+                    Arrays.stream(request.responsibilityOf()).map(Username::get).toArray(String[]::new)
+            );
+        } else if (request.dueTime() == null) { // Due time is optional
+            taskId = m_tasks.add(
+                    request.name().get(),
+                    request.desc().get(),
+                    request.dueDate().get(),
+                    Arrays.stream(request.responsibilityOf()).map(Username::get).toArray(String[]::new)
+            );
+        } else {
+            taskId = m_tasks.add( // all fields are mandatory
+                    request.name().get(),
+                    request.desc().get(),
+                    request.dueDate().get(),
+                    request.dueTime().get(),
+                    Arrays.stream(request.responsibilityOf()).map(Username::get).toArray(String[]::new)
+            );
         }
-    }
 
+        return ResponseEntity.ok().body(taskId);
+    }
 }

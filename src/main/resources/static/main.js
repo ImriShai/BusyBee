@@ -51,79 +51,82 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function fetchTasks() {
-	try {
-		const response = await fetch(`${baseUrl}/tasks`);
-		if (!response.ok) throw new Error(`Error: ${response.status}`);
-		
-		const tasks = await response.json();
-		displayTasks(tasks);
-	} catch (error) {
-		console.error('Failed to fetch tasks:', error);
-	}
+    try {
+        const url = `${baseUrl}/tasks`;
+        console.log(url)
+        const response = await fetch(`${baseUrl}/tasks`);
+        if (!response.ok) throw new Error(`Error: ${response.status}`);
+
+        const tasks = await response.json();
+        displayTasks(tasks);
+    } catch (error) {
+        console.error('Failed to fetch tasks:', error);
+    }
 }
 
 async function markTaskAsDone(taskId, checkbox) {
-	try {
-		const response = await sendPost("/done", { taskid: taskId });
-		if (response.ok) {
-			checkbox.checked = true;
-			checkbox.readOnly = true;
-		} else {
-			throw new Error(`Error: ${response.status}`);
-		}
-	} catch (error) {
-		console.error('Failed to mark task as done:', error);
-		checkbox.checked = false; // Uncheck if the request fails
-	}
+    try {
+        const response = await sendPost("/done", { taskid: taskId });
+        if (response.ok) {
+            checkbox.checked = true;
+            checkbox.readOnly = true;
+        } else {
+            throw new Error(`Error: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Failed to mark task as done:', error);
+        checkbox.checked = false; // Uncheck if the request fails
+    }
 }
 
 function getDueDateClass(task) {
-	const dueDate = new Date(task.dueDate);
-	const today = new Date();
-	const timeDiff = dueDate - today;
-	const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    const dueDate = new Date(task.dueDate);
+    const today = new Date();
+    const timeDiff = dueDate - today;
+    const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
-	if (daysDiff < 0) {
-		return "overdue-summary";
-	} else if (daysDiff === 0) {
-		return "due-today-summary";
-	} else if (daysDiff === 1) {
-		return "due-tomorrow-summary";
-	} else if (daysDiff <= 7) {
-		return "due-in-7-days-summary";
-	} else if (daysDiff <= 10) {
-		return "due-in-10-days-summary";
-	}
-	return "";
+    if (daysDiff < 0) {
+        return "overdue-summary";
+    } else if (daysDiff === 0) {
+        return "due-today-summary";
+    } else if (daysDiff === 1) {
+        return "due-tomorrow-summary";
+    } else if (daysDiff <= 7) {
+        return "due-in-7-days-summary";
+    } else if (daysDiff <= 10) {
+        return "due-in-10-days-summary";
+    }
+    return "";
 }
 
 function displayTasks(tasks) {
-	const container = document.getElementById("tasks-container");
-	container.innerHTML = "";  // Clear any existing content
+    const container = document.getElementById("tasks-container");
+    container.innerHTML = "";  // Clear any existing content
 
-	tasks.forEach(task => {
-		const taskElement = document.createElement("details");
-		taskElement.className = "task";
+    tasks.forEach(task => {
+        const taskElement = document.createElement("details");
+        taskElement.className = "task";
+        taskElement.dataset.taskId = task.taskid;
 
-		// Create the summary element and append checkbox and name
-		const summaryClass = task.dueDate ? getDueDateClass(task) : '';
-		const summaryElement = document.createElement("summary");
-		summaryElement.className = `task-header ${summaryClass}`;
+        // Create the summary element and append checkbox and name
+        const summaryClass = task.dueDate ? getDueDateClass(task) : '';
+        const summaryElement = document.createElement("summary");
+        summaryElement.className = `task-header ${summaryClass}`;
 
-		const label = createTaskHeader(task);
-		summaryElement.appendChild(label);
+        const label = createTaskHeader(task);
+        summaryElement.appendChild(label);
         const dueDateSpan = document.createElement("span");
         dueDateSpan.textContent = task.dueDate ? `${task.dueDate} ${task.dueTime ? 'at ' + task.dueTime : ''}` : '';
-		summaryElement.appendChild(dueDateSpan);
+        summaryElement.appendChild(dueDateSpan);
 
-		// Append summary and details to task element
-		taskElement.appendChild(summaryElement);
+        // Append summary and details to task element
+        taskElement.appendChild(summaryElement);
 
-		const detailsElement = createDetails(task);
-		taskElement.appendChild(detailsElement);
+        const detailsElement = createDetails(task);
+        taskElement.appendChild(detailsElement);
 
-		container.appendChild(taskElement);
-	});
+        container.appendChild(taskElement);
+    });
 }
 
 function createTaskHeader(task) {
@@ -178,11 +181,16 @@ function createDetails(task) {
 function createComments(taskid, comments) {
     const commentsContainer = document.createElement("div");
     commentsContainer.className = "comments";
+    commentsContainer.dataset.taskId = taskid; // Store taskId at the comments container level
+
 
     comments.forEach(comment => {
         const commentElement = document.createElement("div");
         commentElement.className = "comment";
         commentElement.style.paddingLeft = `${(comment.indent || 0) * 20}px`;
+        commentElement.dataset.commentId = comment.commentid; // Store commentId for each comment
+        commentElement.dataset.originalFilename = comment.originalFilename; // Store originalFilename for each comment
+
 
         const createdByElement = document.createElement("span");
         createdByElement.className = "text";
@@ -218,7 +226,7 @@ function createComments(taskid, comments) {
             }
             const attachmentLink = document.createElement("a");
             attachmentLink.href = `${baseUrl}/attachment?file=${comment.attachment}`;
-            attachmentLink.textContent = comment.attachment;
+            attachmentLink.textContent = comment.originalFilename;
             attachmentLink.className = "attachment";
 
             commentElement.appendChild(attachmentIcon);
@@ -235,7 +243,7 @@ function createComments(taskid, comments) {
         const replyButton = document.createElement("button");
         replyButton.textContent = "↩️"; // Unicode reply symbol
         replyButton.className = "reply-button";
-        replyButton.onclick = () => toggleReplyForm(commentElement, comment.commentId);
+        replyButton.onclick = () => toggleReplyForm(commentElement, comment.commentid);
         commentElement.appendChild(replyButton);
 
         commentsContainer.appendChild(commentElement);
@@ -271,13 +279,18 @@ function toggleReplyForm(commentElement, commentId) {
     if (existingForm) {
         existingForm.remove();
     } else {
-        const replyForm = createCommentForm(null, commentId);
+        // Find the closest task element to get the taskId
+        const taskElement = commentElement.closest(".task");
+        // Extract taskId from the task element or data attribute
+        const taskId = taskElement.dataset.taskId || findTaskIdFromCommentElement(commentElement);
+
+        const replyForm = createCommentForm(taskId, commentId);
         commentElement.appendChild(replyForm);
     }
 }
 
 async function submitComment(taskId, textBox, fileInput, parentCommentId = null) {
-const formData = new FormData();
+    const formData = new FormData();
 
     // Create the JSON object for comment fields
     const commentFields = {
@@ -311,5 +324,21 @@ const formData = new FormData();
 }
 
 function redirectToCreate() {
-	window.location.href = "tasks_create.html";
+    window.location.href = "tasks_create.html";
+}
+
+function findTaskIdFromCommentElement(commentElement) {
+    // Navigate up through the DOM to find the parent task
+    // This is a fallback in case the data attribute approach doesn't work
+    const taskDetails = commentElement.closest(".task-details");
+    if (!taskDetails) return null;
+
+    // Find the parent task element
+    const taskElement = taskDetails.closest(".task");
+
+    // Extract taskId from any identifiable element or structure within the task
+    // This will depend on how your task data is structured in the DOM
+    // For example, you might have a hidden input with the taskId
+    const taskIdElement = taskElement.querySelector(".task-id");
+    return taskIdElement ? taskIdElement.value : null;
 }

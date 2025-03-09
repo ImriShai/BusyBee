@@ -1,26 +1,30 @@
+
 package com.securefromscratch.busybee.safety;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.owasp.html.PolicyFactory;
-import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.safetypes.exception.TypeValidationException;
+import java.lang.SecurityException;
 import org.owasp.safetypes.types.string.BoundedString;
 import org.springframework.boot.context.properties.bind.ConstructorBinding;
-import java.lang.SecurityException;
+import org.owasp.html.PolicyFactory;
+import org.owasp.html.HtmlPolicyBuilder;
 
 import java.io.*;
 
-@Schema(type = "String", description = "Name")
-public final class Name extends BoundedString implements Serializable {
-    public static final int MIN_LENGTH = 1;
-    public static final int MAX_LENGTH = 100;
+@Schema(type = "String", description = "Username")
+public final class Username extends BoundedString implements Serializable {
 
-    private Name() throws TypeValidationException {
-        super("");
+
+    public static final int MIN_LENGTH = 1;
+    public static final int MAX_LENGTH = 30;
+
+    // No-argument constructor for deserialization
+    private Username() throws TypeValidationException {
+        super(""); // Initialize with an empty string
     }
 
     @ConstructorBinding
-    public Name(String value) throws TypeValidationException {
+    public Username(String value) throws TypeValidationException {
         super(value);
         validateName(value);
     }
@@ -41,11 +45,15 @@ public final class Name extends BoundedString implements Serializable {
         }
 
         if (value.matches(".*[<>].*")) {
-            throw new SecurityException("Name must not contain HTML tags");
+            throw new TypeValidationException("Username must not contain HTML tags");
         }
 
-        if (!value.matches("^[a-zA-Z0-9 \u0590-\u05FF]*$")) {
-            throw new SecurityException("Name must contain only letters, numbers, spaces, and Hebrew characters");
+        if (!value.matches("^[a-zA-Z0-9\u0590-\u05FF ]*$")) {
+            throw new SecurityException("Username must contain only letters, numbers, and spaces");
+        }
+
+        if (!value.matches("^[a-zA-Z\u0590-\u05FF].*")) {
+            throw new SecurityException("Username must start with a letter");
         }
 
         PolicyFactory policy = new HtmlPolicyBuilder()
@@ -54,7 +62,7 @@ public final class Name extends BoundedString implements Serializable {
         String sanitizedValue = policy.sanitize(value);
 
         if (!sanitizedValue.equals(value)) {
-            throw new SecurityException("Name contains invalid characters after sanitization");
+            throw new SecurityException("Username contains invalid characters after sanitization");
         }
     }
 
@@ -62,7 +70,7 @@ public final class Name extends BoundedString implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Name name = (Name) o;
+        Username name = (Username) o;
         return get().equals(name.get());
     }
 
@@ -84,7 +92,7 @@ public final class Name extends BoundedString implements Serializable {
     }
 
     @Serial
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException, TypeValidationException {
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException, TypeValidationException, SecurityException {
         in.defaultReadObject();
         String value = in.readUTF(); // Deserialize the underlying string value
         validateName(value); // Revalidate the deserialized value
@@ -102,13 +110,13 @@ public final class Name extends BoundedString implements Serializable {
         private static final long serialVersionUID = 1L;
         private final String value;
 
-        SerializationProxy(Name username) {
+        SerializationProxy(Username username) {
             this.value = username.get();
         }
 
         @Serial
         private Object readResolve() throws TypeValidationException {
-            return new Name(value);
+            return new Username(value);
         }
     }
 }

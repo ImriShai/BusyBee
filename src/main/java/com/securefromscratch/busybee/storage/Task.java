@@ -1,212 +1,237 @@
 package com.securefromscratch.busybee.storage;
 
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.securefromscratch.busybee.safety.Description;
+import com.securefromscratch.busybee.safety.DueDate;
+import com.securefromscratch.busybee.safety.DueTime;
+import com.securefromscratch.busybee.safety.Name;
+import com.securefromscratch.busybee.safety.Username;
+import org.owasp.safetypes.exception.TypeValidationException;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
-// IMPORTANT: This class in intentionally IMMUTABLE (except for adding comments, see below)
-// It should not be possible to modify it.
-// Also note that when returning all comments an unmodifiable list is returned:
-// public List<TaskComment> comments() { return Collections.unmodifiableList(m_comments); }
-//
-// The addComment option is a MISTAKE. This class should be immutable (following Oracle secure coding guidelines)
-// TODO: Make all neccessary changes so this class becomes truely immutable.
-//       There are multiple ways to solve this, each with different pros-cons.
+// This class is now truly immutable
 public final class Task implements Serializable {
     private final UUID m_taskid;
-    private final String m_name;
-    private final String m_desc;
-    private final LocalDate m_dueDate;
-    private final boolean m_hasDueTime;
-    private final LocalTime m_dueTime;
-    private final String m_createdBy;
-    private final String[] m_responsibilityOf;
-    private final LocalDateTime m_creationDatetime;
+    private final Name m_name;
+    private final Description m_desc;
+    private final DueDate m_dueDate;
+    private final DueTime m_dueTime;
+    private final Username m_createdBy;
+    private final Username[] m_responsibilityOf;
+    private final DueDate m_creationDate;
+    private final DueTime m_creationTime;
     private final boolean m_done;
-    private final List<TaskComment> m_comments = new ArrayList<>();
+    private final List<TaskComment> m_comments;
 
-    public Task(String name, String desc,
-                String createdBy, String[] responsibilityOf
-    ) {
+    // Constructor for creating a new Task
+    public Task(Name name, Description desc, Username createdBy, Username[] responsibilityOf) throws TypeValidationException {
         this(name, desc, Optional.empty(), Optional.empty(), createdBy, responsibilityOf);
     }
 
-    public Task(String name, String desc, LocalDate dueDate,
-                String createdBy, String[] responsibilityOf
-    ) {
+    public Task(Name name, Description desc, DueDate dueDate, Username createdBy, Username[] responsibilityOf) throws TypeValidationException {
         this(name, desc, Optional.of(dueDate), Optional.empty(), createdBy, responsibilityOf);
     }
 
-    public Task(String name, String desc, LocalDate dueDate, String createdBy) {
-        this(name, desc, Optional.of(dueDate), Optional.empty(), createdBy, new String[]{createdBy});
+    public Task(Name name, Description desc, DueDate dueDate, Username createdBy) throws TypeValidationException {
+        this(name, desc, Optional.of(dueDate), Optional.empty(), createdBy, new Username[]{createdBy});
     }
 
-    public Task(String name, String desc, LocalDate dueDate, LocalTime dueTime,
-                String createdBy, String[] responsibilityOf
-    ) {
+    public Task(Name name, Description desc, DueDate dueDate, DueTime dueTime, Username createdBy, Username[] responsibilityOf) throws TypeValidationException {
         this(name, desc, Optional.of(dueDate), Optional.of(dueTime), createdBy, responsibilityOf);
     }
 
-    Task(String name, String desc, LocalDate dueDate, String createdBy, String[] responsibilityOf, LocalDateTime createdOn) {
-        this(name, desc, Optional.of(dueDate), Optional.empty(), createdBy, responsibilityOf, createdOn);
-    }
-
-    Task(String name, String desc, LocalDate dueDate, String createdBy, LocalDateTime createdOn) {
-        this(name, desc, Optional.of(dueDate), Optional.empty(), createdBy, new String[]{createdBy}, createdOn);
-    }
-
-    Task(String name, String desc, LocalDate dueDate, LocalTime dueTime, String createdBy, String[] responsibilityOf, LocalDateTime createdOn) {
-        this(name, desc, Optional.of(dueDate), Optional.of(dueTime), createdBy, responsibilityOf, createdOn);
-    }
-
-    public Task(String name, String desc, LocalDate dueDate, LocalTime dueTime, String createdBy) {
-        this(name, desc, Optional.of(dueDate), Optional.of(dueTime), createdBy, new String[]{createdBy});
+    public Task(Name name, Description desc, DueDate dueDate, DueTime dueTime, Username createdBy) throws TypeValidationException {
+        this(name, desc, Optional.of(dueDate), Optional.of(dueTime), createdBy, new Username[]{createdBy});
     }
 
     private Task(
-            String name,
-            String desc,
-            Optional<LocalDate> dueDate,
-            Optional<LocalTime> dueTime,
-            String createdBy,
-            String[] responsibilityOf
-    ) {
+            Name name,
+            Description desc,
+            Optional<DueDate> dueDate,
+            Optional<DueTime> dueTime,
+            Username createdBy,
+            Username[] responsibilityOf
+    ) throws TypeValidationException {
         this(UUID.randomUUID(), name, desc,
-            dueDate.orElse(LocalDate.MAX),
-            dueTime.isPresent(),
-            dueTime.orElse(LocalTime.MIN),
-            createdBy, responsibilityOf, LocalDateTime.now(), false
-        );
+                dueDate.orElse(null),
+                dueTime.orElse(null),
+                createdBy, responsibilityOf, LocalDateTime.now(), false, Collections.emptyList());
     }
 
     private Task(
-            String name,
-            String desc,
-            Optional<LocalDate> dueDate,
-            Optional<LocalTime> dueTime,
-            String createdBy,
-            String[] responsibilityOf,
-            LocalDateTime createdOn
-    ) {
-        this(UUID.randomUUID(), name, desc,
-                dueDate.orElse(LocalDate.MAX),
-                dueTime.isPresent(),
-                dueTime.orElse(LocalTime.MIN),
-                createdBy, responsibilityOf, createdOn, false
-        );
-    }
-
-    private Task(
-        UUID taskid,
-        String name,
-        String desc,
-        LocalDate dueDate,
-        boolean hasDueTime,
-        LocalTime dueTime,
-        String createdBy,
-        String[] responsibilityOf,
-        LocalDateTime creationDatetime,
-        boolean done
-    ) {
+            UUID taskid,
+            Name name,
+            Description desc,
+            DueDate dueDate,
+            DueTime dueTime,
+            Username createdBy,
+            Username[] responsibilityOf,
+            LocalDateTime creationDatetime,
+            boolean done,
+            List<TaskComment> comments
+    ) throws TypeValidationException {
         this.m_taskid = taskid;
         this.m_name = name;
         this.m_desc = desc;
         this.m_dueDate = dueDate;
-        this.m_hasDueTime = hasDueTime;
         this.m_dueTime = dueTime;
         this.m_createdBy = createdBy;
-        this.m_responsibilityOf = responsibilityOf;
-        this.m_creationDatetime = creationDatetime;
+
+        this.m_responsibilityOf = responsibilityOf.clone(); // Defensive copy
+        if(dueDate == null) {
+            this.m_creationDate = new DueDate(creationDatetime.toLocalDate());
+            this.m_creationTime = new DueTime(creationDatetime.toLocalTime());
+        } else {
+            this.m_creationDate = new DueDate(creationDatetime.toLocalDate(),dueDate.get(), false);
+
+            if (dueTime != null) {
+                this.m_creationTime = new DueTime(creationDatetime, LocalDateTime.of(dueDate.get(),dueTime.get()));
+            }
+            else {
+                this.m_creationTime = new DueTime(creationDatetime.toLocalTime());
+            }
+        }
+
+
         this.m_done = done;
-    }
-    public static Task asDone(Task task) {
-        return new Task(task.m_taskid, task.m_name, task.m_desc, task.m_dueDate, task.m_hasDueTime, task.m_dueTime, task.m_createdBy, task.m_responsibilityOf, task.m_creationDatetime, true);
+        this.m_comments = Collections.unmodifiableList(new ArrayList<>(comments)); // Immutable list
     }
 
+    public Task(Name name, Description description, DueDate dueDate, Username uname, LocalDateTime created) throws TypeValidationException {
+
+        this(UUID.randomUUID(), name, description, dueDate, new DueTime(LocalTime.MIN), uname, new Username[]{uname}, created, false, Collections.emptyList());
+    }
+
+    public Task(Name name, Description desc, DueDate dueDate, Username uname, Username[] unames, LocalDateTime created) throws TypeValidationException {
+        this(UUID.randomUUID(), name, desc, dueDate, new DueTime(LocalTime.MIN), uname, unames, created, false, Collections.emptyList());
+    }
+
+    public Task(Name name, Description description, DueDate dueDate, DueTime dueTime, Username uname, Username[] unames, LocalDateTime created) throws TypeValidationException {
+        this(UUID.randomUUID(), name, description, dueDate, dueTime, uname, unames, created, false, Collections.emptyList());
+    }
+
+
+    // Factory method to create a new Task with additional comments
+    public Task withComment(TaskComment comment) throws TypeValidationException {
+        List<TaskComment> newComments = new ArrayList<>(this.m_comments);
+        newComments.add(comment);
+        return new Task(
+                this.m_taskid,
+                this.m_name,
+                this.m_desc,
+                this.m_dueDate,
+                this.m_dueTime,
+                this.m_createdBy,
+                this.m_responsibilityOf,
+                creationDatetime(),
+                this.m_done,
+                newComments
+        );
+    }
+
+    // Factory method to create a new Task with comments removed
+    public Task withoutComment(UUID commentId) throws TypeValidationException {
+        List<TaskComment> newComments = this.m_comments.stream()
+                .filter(comment -> !comment.commentId().equals(commentId))
+                .collect(Collectors.toList());
+        return new Task(
+                this.m_taskid,
+                this.m_name,
+                this.m_desc,
+                this.m_dueDate,
+                this.m_dueTime,
+                this.m_createdBy,
+                this.m_responsibilityOf,
+                creationDatetime(),
+                this.m_done,
+                newComments
+        );
+    }
+
+    // Factory method to mark the task as done
+    public static Task asDone(Task task) throws TypeValidationException {
+        return new Task(
+                task.m_taskid,
+                task.m_name,
+                task.m_desc,
+                task.m_dueDate,
+                task.m_dueTime,
+                task.m_createdBy,
+                task.m_responsibilityOf,
+                task.creationDatetime(),
+                true,
+                task.m_comments
+        );
+    }
+
+    // Getters
     public UUID taskid() { return m_taskid; }
-    public String name() { return m_name; }
-    public String desc() { return m_desc; }
-    public String createdBy() { return m_createdBy; }
-    public String[] responsibilityOf() { return m_responsibilityOf; }
-    public LocalDateTime creationDatetime() { return m_creationDatetime; }
+    public Name name() { return m_name; }
+    public Description desc() { return m_desc; }
+    public Username createdBy() { return m_createdBy; }
+    public Username[] responsibilityOf() { return m_responsibilityOf.clone(); } // Defensive copy
+    public LocalDateTime creationDatetime() {
+        return LocalDateTime.of(m_creationDate.get(), m_creationTime.get());
+    }
     public boolean done() { return m_done; }
-    public List<TaskComment> comments() { return Collections.unmodifiableList(m_comments); }
+    public List<TaskComment> comments() { return m_comments; }
 
-    public Optional<LocalDate> dueDate() {
-        return LocalDate.MAX.equals(m_dueDate) ? Optional.empty() : Optional.of(m_dueDate);
+    public Optional<DueDate> dueDate() {
+        return Optional.ofNullable(m_dueDate);
     }
 
-    public Optional<LocalTime> dueTime() {
-        return m_hasDueTime ? Optional.of(m_dueTime) : Optional.empty();
+    public Optional<DueTime> dueTime() {
+        return Optional.ofNullable(m_dueTime);
     }
 
-    UUID addComment(String text, String createdBy, Optional<UUID> after) {
-        return addComment((indent)->new TaskComment(text, createdBy, indent), after);
-    }
-
-    UUID addComment(String text, String createdBy, LocalDateTime createdOn, Optional<UUID> after) {
-        return addComment((indent)->new TaskComment(text, createdBy, createdOn, indent), after);
-    }
-
-    UUID addComment(String text, Optional<String> image, Optional<String> attachment, String createdBy, Optional<UUID> after) {
-        return addComment((indent)->new TaskComment(text, image, attachment, createdBy, indent), after);
-    }
-
-    UUID addComment(String text, Optional<String> image, Optional<String> attachment, String createdBy, LocalDateTime createdOn, Optional<UUID> after) {
-        return addComment((indent)->new TaskComment(text, image, attachment, createdBy, createdOn, indent), after);
-    }
-
-    private int findCommentIdx(UUID id) {
-        OptionalInt indexOpt = IntStream.range(0, m_comments.size())
-                .filter(i -> m_comments.get(i).commentId().equals(id))
-                .findAny();
-
-        return indexOpt.orElse(-1);
-    }
-
-    private UUID addComment(Function<Integer, TaskComment> commentGenerator, Optional<UUID> after) {
-        int afterIdx = after.map(this::findCommentIdx).orElse(-1);
-        int indent = (afterIdx == -1) ? 0 : m_comments.get(afterIdx).indent() + 1;
-        // advance to last comment with this indent (could have inner indents so looks as long as indent isn't lower)
-        while (afterIdx + 1 < m_comments.size() && m_comments.get(afterIdx + 1).indent() >= indent) {
-            ++afterIdx;
+    // Helper method to validate DueDate and DueTime
+    public boolean isDueDateTimeValid() {
+        if (this.dueDate().isEmpty() && this.dueTime().isEmpty()) {
+            return true; // DueDate is optional
+        }
+        if(this.dueDate().isEmpty()) {
+            return false; // If DueTime is present, DueDate must be present
         }
 
-        TaskComment c = commentGenerator.apply(indent);
-        if (afterIdx == -1) {
-            m_comments.add(c);
-        }
-        else {
-            m_comments.add(afterIdx + 1, c);
-        }
-        return c.commentId();
-    }
+        if(this.dueTime().isEmpty()) {
+            LocalDate dueDate = this.dueDate().orElse(null).get();
+            LocalDate creationDate = creationDatetime().toLocalDate();
+            return !dueDate.isBefore(creationDate); // DueDate is after the creation date
 
-    public void removeComment(UUID commentId) {
-        int commentIdx = findCommentIdx(commentId);
-        if (commentIdx == -1) {
-            throw new CommentNotFoundException(m_taskid, commentId);
         }
-        TaskComment old = m_comments.remove(commentIdx);
-        assert(old != null); // must succeed
+
+        LocalDate dueDate = this.dueDate().orElse(null).get();
+        LocalTime dueTime = this.dueTime().orElse(null).get();
+        LocalDateTime creationDateTime = creationDatetime();
+
+        if (dueDate != null && dueDate.isBefore(creationDateTime.toLocalDate())) {
+            return false; // DueDate is before the creation date
+        }
+
+        if (dueDate != null && dueTime != null && dueDate.isEqual(creationDateTime.toLocalDate())) {
+            return !dueTime.isBefore(creationDateTime.toLocalTime()); // DueTime is before the creation time on the same day
+        }
+
+        return true;
     }
 
     @Override
     public String toString() {
         return "Task{" +
                 "m_taskid=" + m_taskid +
-                ", m_name='" + m_name + '\'' +
-                ", m_desc='" + m_desc + '\'' +
+                ", m_name=" + m_name +
+                ", m_desc=" + m_desc +
                 ", m_dueDate=" + m_dueDate +
-                ", m_hasDueTime=" + m_hasDueTime +
                 ", m_dueTime=" + m_dueTime +
-                ", m_createdBy='" + m_createdBy + '\'' +
+                ", m_createdBy=" + m_createdBy +
                 ", m_responsibilityOf=" + Arrays.toString(m_responsibilityOf) +
-                ", m_creationDatetime=" + m_creationDatetime +
+                ", m_creationDatetime=" + creationDatetime() +
                 ", m_done=" + m_done +
                 ", m_comments=" + m_comments +
                 '}';
