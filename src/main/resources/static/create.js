@@ -21,20 +21,20 @@ function submitTask() {
     };
 
     sendPost("/create", taskData)
-    .then(response => {
-        if (response.ok) {
-            window.location.href = "main.html";
-        } else if(response.status === 409) {
-            alert("Task with this name already exists.");}
-            else{
-            alert("Failed to add task. Please try again.");
-        }
-    })
-    .catch(error => console.error("Error:", error));
+        .then(response => response.json().then(data => {
+            if (response.ok) {
+                window.location.href = "main.html";
+            } else if (response.status === 409) {
+                alert(`Task with this name already exists: ${data.message}`);
+            } else {
+                alert(`Failed to add task: ${data.message}`);
+            }
+        }))
+        .catch(error => console.error("Error:", error));
 }
 
 function cancelTask() {
-    window.location.href = "index.html";
+    window.location.href = "main.html";
 }
 
 function addResponsibilityField() {

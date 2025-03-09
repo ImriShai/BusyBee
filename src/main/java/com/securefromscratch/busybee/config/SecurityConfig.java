@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +29,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/public/**", "index.html").permitAll() // Allow static resources
+                        .requestMatchers("/public/**", "index.html", "/register", "/favicon.ico").permitAll() // Allow static resources
                         .anyRequest().authenticated()
 
                 )

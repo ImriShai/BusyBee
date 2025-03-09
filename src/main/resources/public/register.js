@@ -43,11 +43,15 @@ document.addEventListener('DOMContentLoaded', async function () {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                }),
             });
 
-            if (response.status === 200) {
+            if (response.status === 201) {
                 const data = await response.json();
+                localStorage.setItem('username', data.username);
                 window.location.href = data.redirectTo;
             } else if (response.status === 401) {
                 const errorData = await response.json();

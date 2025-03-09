@@ -28,7 +28,7 @@ public class StorageController {
     @Autowired
     private FileStorage m_files;
     private final ConcurrentMap<String, List<Instant>> userFilesDownloadsTimestamps = new ConcurrentHashMap<>();
-    private static final int MAX_FILE_DOWNLOADS_PER_HOUR = 5;
+    private static final int MAX_FILE_DOWNLOADS_PER_HOUR = 0;
 
     public StorageController() throws IOException {
         // Use an absolute path or ensure the relative path is correct

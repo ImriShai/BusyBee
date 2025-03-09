@@ -13,7 +13,7 @@ document.getElementById("importForm").onsubmit = async function(event) {
             alert("Tasks imported successfully!");
             window.location.href = "main.html";
         } else {
-            const errorMessage = await response.text();
+            const errorMessage = await response.json().then(data => data.message);
             alert("Failed to import tasks: " + errorMessage);
         }
     } catch (error) {

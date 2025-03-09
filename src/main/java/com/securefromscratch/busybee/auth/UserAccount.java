@@ -1,24 +1,28 @@
 package com.securefromscratch.busybee.auth;
 
+import com.securefromscratch.busybee.safety.Username;
+import org.owasp.safetypes.exception.TypeValidationException;
+
 public class UserAccount {
-    private String username;
+    private Username username;
     private String hashedPassword;
     private boolean enabled = true;
 
-    public UserAccount(String username, String hashedPassword) {
+    public UserAccount(String username, String hashedPassword) throws TypeValidationException {
 
-        this.username = username;
+        this.username = new Username(username);
         this.hashedPassword = hashedPassword;
 
 
     }
 
     public String getUsername() {
-        return username;
+        return username.get();
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+
+    public void setUsername(String username) throws TypeValidationException {
+            this.username = new Username(username);
     }
 
     public String getHashedPassword() {

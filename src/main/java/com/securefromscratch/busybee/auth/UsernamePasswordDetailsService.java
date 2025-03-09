@@ -1,5 +1,7 @@
 package com.securefromscratch.busybee.auth;
 
+import com.securefromscratch.busybee.exceptions.UserAlreadyExistException;
+import org.owasp.safetypes.exception.TypeValidationException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -31,7 +33,7 @@ public class UsernamePasswordDetailsService implements UserDetailsService {
                 .build();
     }
 
-    public void createUser(String username, String password) {
-        m_usersStorage.createUser(username, password);
+    public UserAccount createUser(String username, String password) throws TypeValidationException, UserAlreadyExistException {
+        return m_usersStorage.createUser(username, password);
     }
 }

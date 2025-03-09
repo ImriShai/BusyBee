@@ -49,7 +49,7 @@ public class TasksController {
         UUID taskId = UUID.fromString(request.taskid().toString());
 
         // Check if the task exists, return 404 if not
-        Optional<Task> taskOptional = m_tasks.find(request.taskid());
+        Optional<Task> taskOptional = m_tasks.find(taskId);
         if (taskOptional.isEmpty()) {
             throw new TaskNotFoundException(request.taskid());
         }

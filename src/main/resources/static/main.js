@@ -32,7 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 a.remove();
                 window.URL.revokeObjectURL(url);
             } else {
-                alert("Failed to export tasks.");
+                const errorMessage = await response.json().then(data => data.message);
+                alert("Failed to export tasks: " + errorMessage);
             }
         } catch (error) {
             console.error("Error exporting tasks:", error);
@@ -55,12 +56,16 @@ async function fetchTasks() {
         const url = `${baseUrl}/tasks`;
         console.log(url)
         const response = await fetch(`${baseUrl}/tasks`);
-        if (!response.ok) throw new Error(`Error: ${response.status}`);
+        if (!response.ok) {
+            const errorMessage = await response.json().then(data => data.message);
+            throw new Error(errorMessage);
+        }
 
         const tasks = await response.json();
         displayTasks(tasks);
     } catch (error) {
         console.error('Failed to fetch tasks:', error);
+        alert('Failed to fetch tasks: ' + error.message);
     }
 }
 
@@ -71,10 +76,12 @@ async function markTaskAsDone(taskId, checkbox) {
             checkbox.checked = true;
             checkbox.readOnly = true;
         } else {
-            throw new Error(`Error: ${response.status}`);
+            const errorMessage = await response.json().then(data => data.message);
+            throw new Error(errorMessage);
         }
     } catch (error) {
         console.error('Failed to mark task as done:', error);
+        alert('Failed to mark task as done: ' + error.message);
         checkbox.checked = false; // Uncheck if the request fails
     }
 }
@@ -231,6 +238,8 @@ function createComments(taskid, comments) {
 
             commentElement.appendChild(attachmentIcon);
             commentElement.appendChild(attachmentLink);
+
+
         }
 
         // Display createdOn date at the bottom right
@@ -315,11 +324,12 @@ async function submitComment(taskId, textBox, fileInput, parentCommentId = null)
             fileInput.value = ""; // Clear file input
             fetchTasks(); // Refresh tasks to show the new comment
         } else {
-            throw new Error(`Error: ${response.status}`);
+            const errorMessage = await response.json().then(data => data.message);
+            throw new Error(errorMessage);
         }
     } catch (error) {
         console.error("Failed to submit comment:", error);
-        alert("An error occurred while submitting the comment.");
+        alert('Failed to submit comment: ' + error.message);
     }
 }
 

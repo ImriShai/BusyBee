@@ -1,5 +1,8 @@
 package com.securefromscratch.busybee.storage;
 
+import com.securefromscratch.busybee.safety.*;
+import org.owasp.safetypes.exception.TypeValidationException;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -7,14 +10,15 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class InitialDataGenerator {
-    public static void fillWithData(List<Task> tasks) {
+    public static void fillWithData(List<Task> tasks) throws TypeValidationException {
         List<LocalDateTime> randomPastDates = generateRandomDateTimes(15, 5);
+        randomPastDates.sort(LocalDateTime::compareTo);
         List<LocalDateTime> randomFutureDates = generateRandomDateTimes(10, -5);
 
         tasks.addAll(List.of(
                 new Task(
-                        "Buy ingredients for Caprese Sandwich",
-                        """
+                        new Name("Buy ingredients for Caprese Sandwich"),
+                        new Description("""
                                     <ul>
                                         <li>1 fresh baguette or ciabatta roll, sliced in half</li>
                                         <li>1-2 ripe tomatoes, sliced</li>
@@ -24,44 +28,98 @@ public class InitialDataGenerator {
                                         <li>Salt and pepper to taste</li>
                                         <li>Olive oil for drizzling</li>
                                     </ul>
-                                """,
-                        randomFutureDates.remove(randomFutureDates.size() - 1).toLocalDate(),
-                        "Yariv", randomPastDates.remove(0)
+                                """),
+                        new DueDate(randomFutureDates.remove(randomFutureDates.size() - 1).toLocalDate()),
+                        new Username("Yariv"), randomPastDates.remove(0)
                 ),
                 new Task(
-                        "Get sticker for car",
-                        "Parking inside Ariel requires sticker. You can get one at security office.",
-                        LocalDate.now().plusDays(10),
-                        "Ariel Security Department",
-                        new String[]{"Yariv"}, randomPastDates.remove(0)
+                        new Name("Get sticker for car"),
+                        new Description("Parking inside Ariel requires sticker. You can get one at security office."),
+                        new DueDate(LocalDate.now().plusDays(10)),
+                        new Username("Ariel Security Department"),
+                        new Username[]{new Username("Yariv")}, randomPastDates.remove(0)
                 ),
                 new Task(
-                        "Change closet from summer to winter",
-                        "Winter is Coming",
-                        LocalDate.now().plusDays(20),
-                        "Ariel Security Department",
-                        new String[]{"Yariv"}, randomPastDates.remove(0)
+                        new Name("Change closet from summer to winter"),
+                        new Description("Winter is Coming"),
+                        new DueDate(LocalDate.now().plusDays(20)),
+                        new Username("Ariel Security Department"),
+                        new Username[]{new Username("Yariv")}, randomPastDates.remove(0)
                 ),
                 new Task(
-                        "Prepare lab report 1",
-                        "Can be found at <a href='https://moodlearn.ariel.ac.il/mod/resource/view.php?id=2011102'>moodle lab report 1</a>",
-                        LocalDate.now(),
-                        randomFutureDates.remove(randomFutureDates.size() - 1).toLocalTime(),
-                        "Yariv",
-                        new String[]{"Students"}, randomPastDates.remove(0)
+                        new Name("Prepare lab report 1"),
+                        new Description("Can be found at <a href='https://moodlearn.ariel.ac.il/mod/resource/view.php?id=2011102'>moodle lab report 1</a>"),
+                        new DueDate(LocalDate.now()),
+                        new DueTime(randomFutureDates.remove(randomFutureDates.size() - 1).toLocalTime()),
+                        new Username("Yariv"),
+                        new Username[]{new Username("Students")}, randomPastDates.remove(0)
                 )
         ));
-        UUID c0_1 = tasks.get(0).addComment("Out of tomatoes in local supermarket",
-                Optional.of("Wikimedia-Corona_Lockdown_Tirupur,_Tamil_Nadu_(3).jpg"), Optional.empty(),
-                "Rita", randomPastDates.remove(0), Optional.empty());
-        tasks.get(0).addComment("Found and bought at our favorite grocer",
-                Optional.of("wikimedia_Fresh_vegetable_stall.jpg"), Optional.empty(),
-                "Rami", randomPastDates.remove(0), Optional.of(c0_1));
-        tasks.get(2).addComment("באמת הגיע הזמן לסדר את הבלאגן בארון", Optional.of("wikipedia_Space-saving_closet.JPG"), Optional.empty(), "Or", randomPastDates.remove(0), Optional.empty());
-        UUID c3_1 = tasks.get(tasks.size() - 1).addComment("מישהו יודע את התשובה לשאלה 12?", Optional.empty(), Optional.of("דוח מעבדה עקרונות תכנות מאובטח.docx"), "Nisan", randomPastDates.remove(0), Optional.empty());
-        tasks.get(tasks.size() - 1).addComment("פשוט תעתיק את התוצאה מחלון הפקודה", Optional.of("CommandWindow.png"), Optional.empty(), "Rony", randomPastDates.remove(0), Optional.of(c3_1));
-        tasks.get(tasks.size() - 1).addComment("אתה מתכוון לשאלה עם ה-POST?", "Aviv", randomPastDates.remove(0), Optional.of(c3_1));
-        UUID c3_2 = tasks.get(tasks.size() - 1).addComment("המחשב נתקע. מה עושים?", "Rony", randomPastDates.remove(0), Optional.empty());
+        Task updatedTask = tasks.get(0).withComment(new TaskComment(
+                "Out of tomatoes in local supermarket",
+                Optional.of("Wikimedia-Corona_Lockdown_Tirupur,_Tamil_Nadu_(3).jpg"),
+                Optional.empty(),
+                new Username("Rita"),
+                randomPastDates.remove(0)
+        ));
+        UUID c0_1 = updatedTask.comments().get(updatedTask.comments().size() - 1).commentId();
+        tasks.set(0, updatedTask);
+
+        updatedTask = tasks.get(0).withComment(new TaskComment(
+                "Found and bought at our favorite grocer",
+                Optional.of("wikimedia_Fresh_vegetable_stall.jpg"),
+                Optional.empty(),
+                new Username("Rami"),
+                randomPastDates.remove(0),
+                c0_1
+        ));
+        tasks.set(0, updatedTask);
+
+        updatedTask = tasks.get(2).withComment(new TaskComment(
+                "באמת הגיע הזמן לסדר את הבלאגן בארון",
+                Optional.of("wikipedia_Space-saving_closet.JPG"),
+                Optional.empty(),
+                new Username("Or"),
+                randomPastDates.remove(0)
+        ));
+        tasks.set(2, updatedTask);
+
+        updatedTask = tasks.get(tasks.size() - 1).withComment(new TaskComment(
+                "מישהו יודע את התשובה לשאלה 12?",
+                Optional.empty(),
+                Optional.of("דוח מעבדה עקרונות תכנות מאובטח.docx"),
+                new Username("Nisan"),
+                randomPastDates.remove(0)
+        ));
+        UUID c3_1 = updatedTask.comments().get(updatedTask.comments().size() - 1).commentId();
+        tasks.set(tasks.size() - 1, updatedTask);
+
+        updatedTask = tasks.get(tasks.size() - 1).withComment(new TaskComment(
+                "פשוט תעתיק את התוצאה מחלון הפקודה",
+                Optional.of("CommandWindow.png"),
+                Optional.empty(),
+                new Username("Rony"),
+                randomPastDates.remove(0),
+                c3_1
+        ));
+        tasks.set(tasks.size() - 1, updatedTask);
+
+        updatedTask = tasks.get(tasks.size() - 1).withComment(new TaskComment(
+                "אתה מתכוון לשאלה עם ה-POST?",
+                new Username("Aviv"),
+                randomPastDates.remove(0),
+                c3_1
+        ));
+        tasks.set(tasks.size() - 1, updatedTask);
+
+        updatedTask = tasks.get(tasks.size() - 1).withComment(new TaskComment(
+                "המחשב נתקע. מה עושים?",
+                new Username("Rony"),
+                randomPastDates.remove(0),
+                0
+        ));
+        UUID c3_2 = updatedTask.comments().get(updatedTask.comments().size() - 1).commentId();
+        tasks.set(tasks.size() - 1, updatedTask);
     }
 
     public static List<LocalDateTime> generateRandomDateTimes(int numberOfDates, int daysAgo) {

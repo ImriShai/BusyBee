@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
+import org.springframework.security.access.AccessDeniedException;
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 import java.util.Map;
@@ -100,6 +101,69 @@ public class GlobalExceptionHandler {
         response.put("error", "Not enough space");
         response.put("message", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.INSUFFICIENT_STORAGE);
+    }
+
+    @ExceptionHandler(TaskNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleTaskNotFoundException(TaskNotFoundException ex, WebRequest request) {
+        LOGGER.error("Task not found: {}", ex.getMessage());
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Task not found");
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleUserNotFoundException(UserNotFoundException ex, WebRequest request) {
+        LOGGER.error("User not found: {}", ex.getMessage());
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "User not found");
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(UserAlreadyExistException.class)
+    public ResponseEntity<Map<String, String>> handleUserAlreadyExistException(UserAlreadyExistException ex, WebRequest request) {
+        LOGGER.error("User already exists: {}", ex.getMessage());
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "User already exists");
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidCredentialsException(InvalidCredentialsException ex, WebRequest request) {
+        LOGGER.error("Invalid credentials: {}", ex.getMessage());
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Invalid credentials");
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidTokenException(InvalidTokenException ex, WebRequest request) {
+        LOGGER.error("Invalid token: {}", ex.getMessage());
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Invalid token");
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(ExpiredTokenException.class)
+    public ResponseEntity<Map<String, String>> handleExpiredTokenException(ExpiredTokenException ex, WebRequest request) {
+        LOGGER.error("Expired token: {}", ex.getMessage());
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Expired token");
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
+        LOGGER.error("Access denied: {}", ex.getMessage());
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Access denied");
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
 
     // Handle all other exceptions
