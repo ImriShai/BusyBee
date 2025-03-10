@@ -97,7 +97,7 @@ public class FileStorage {
         }
 
         // Prevent path traversal attacks
-        if (!filename.matches("^[a-zA-Z0-9_()\\-.+!#@$%^& \\p{IsHebrew}]+$") || filename.contains("..")) {
+        if (!filename.matches("^[a-zA-Z0-9_()\\-.+!#@$%^\\[\\]& \\p{IsHebrew}]+$") || filename.contains("..")) {
             throw new SecurityException("Invalid file name - path traversal attempt detected");
         }
 
