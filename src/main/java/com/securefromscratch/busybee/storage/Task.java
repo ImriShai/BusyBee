@@ -84,16 +84,15 @@ public final class Task implements Serializable {
         this.m_createdBy = createdBy;
 
         this.m_responsibilityOf = responsibilityOf.clone(); // Defensive copy
-        if(dueDate == null) {
+        if (dueDate == null) {
             this.m_creationDate = new DueDate(creationDatetime.toLocalDate());
             this.m_creationTime = new DueTime(creationDatetime.toLocalTime());
         } else {
-            this.m_creationDate = new DueDate(creationDatetime.toLocalDate(),dueDate.get(), false);
+            this.m_creationDate = new DueDate(creationDatetime.toLocalDate(), dueDate.get(), false);
 
             if (dueTime != null) {
-                this.m_creationTime = new DueTime(creationDatetime, LocalDateTime.of(dueDate.get(),dueTime.get()));
-            }
-            else {
+                this.m_creationTime = new DueTime(creationDatetime, LocalDateTime.of(dueDate.get(), dueTime.get()));
+            } else {
                 this.m_creationTime = new DueTime(creationDatetime.toLocalTime());
             }
         }
@@ -171,16 +170,37 @@ public final class Task implements Serializable {
     }
 
     // Getters
-    public UUID taskid() { return m_taskid; }
-    public Name name() { return m_name; }
-    public Description desc() { return m_desc; }
-    public Username createdBy() { return m_createdBy; }
-    public Username[] responsibilityOf() { return m_responsibilityOf.clone(); } // Defensive copy
+    public UUID taskid() {
+        return m_taskid;
+    }
+
+    public Name name() {
+        return m_name;
+    }
+
+    public Description desc() {
+        return m_desc;
+    }
+
+    public Username createdBy() {
+        return m_createdBy;
+    }
+
+    public Username[] responsibilityOf() {
+        return m_responsibilityOf.clone();
+    } // Defensive copy
+
     public LocalDateTime creationDatetime() {
         return LocalDateTime.of(m_creationDate.get(), m_creationTime.get());
     }
-    public boolean done() { return m_done; }
-    public List<TaskComment> comments() { return m_comments; }
+
+    public boolean done() {
+        return m_done;
+    }
+
+    public List<TaskComment> comments() {
+        return m_comments;
+    }
 
     public Optional<DueDate> dueDate() {
         return Optional.ofNullable(m_dueDate);
@@ -195,11 +215,11 @@ public final class Task implements Serializable {
         if (this.dueDate().isEmpty() && this.dueTime().isEmpty()) {
             return true; // DueDate is optional
         }
-        if(this.dueDate().isEmpty()) {
+        if (this.dueDate().isEmpty()) {
             return false; // If DueTime is present, DueDate must be present
         }
 
-        if(this.dueTime().isEmpty()) {
+        if (this.dueTime().isEmpty()) {
             LocalDate dueDate = this.dueDate().orElse(null).get();
             LocalDate creationDate = creationDatetime().toLocalDate();
             return !dueDate.isBefore(creationDate); // DueDate is after the creation date
@@ -220,6 +240,12 @@ public final class Task implements Serializable {
 
         return true;
     }
+
+    public boolean isResponsibleFor(Username username) {
+        return Arrays.asList(m_responsibilityOf).contains(username) || m_createdBy.equals(username);
+    }
+
+
 
     @Override
     public String toString() {

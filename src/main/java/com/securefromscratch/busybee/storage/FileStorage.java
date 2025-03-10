@@ -3,16 +3,16 @@ package com.securefromscratch.busybee.storage;
 import com.securefromscratch.busybee.exceptions.BadRequestException;
 import com.securefromscratch.busybee.exceptions.NotEnoughSpaceException;
 import com.securefromscratch.busybee.exceptions.TooManyRequestsException;
+import com.securefromscratch.busybee.safety.Username;
+import org.apache.catalina.User;
 import org.apache.tika.Tika;
 import org.owasp.safetypes.exception.TypeValidationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.FileStore;
+import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +39,7 @@ public class FileStorage {
     private static final long maxFileSize = 10 * 1024 * 1024; // 10MB
     private static final int MAX_FILE_NAME_LENGTH = 255;
     private static final Map<Path, String> files = new ConcurrentHashMap<>(); // A map of stored files, Path to original filename
+    private static final Map<Path, List<Username>> file_owners = new ConcurrentHashMap<>(); // A map of stored files, Path to owner
 
     public FileStorage(Path storageDirectory) throws IOException {
         m_storagebox = storageDirectory;
@@ -58,6 +59,9 @@ public class FileStorage {
               Path path = Path.of("uploads", filename);
               if (Files.exists(path)) {
                 files.put(path, originalFilename);
+                  List<Username> owners = new ArrayList<>(List.of(task.responsibilityOf()));
+                  owners.add(task.createdBy());
+                file_owners.put(path, owners);
               }
             }
           }
@@ -65,7 +69,7 @@ public class FileStorage {
 
     }
 
-    public StoredFile store(MultipartFile file, String userId) throws IOException, TypeValidationException, SecurityException, TooManyRequestsException {
+    public StoredFile store(MultipartFile file, String userId, List<Username> owners) throws IOException, TypeValidationException, SecurityException, TooManyRequestsException {
         validateFile(file);
         if (exceedsUploadLimit(userId)) {
             throw new TooManyRequestsException("Upload limit exceeded");
@@ -81,6 +85,7 @@ public class FileStorage {
 
         trackUpload(userId);
         files.put(filepath, originalFilename);
+        file_owners.put(filepath,owners);
         return new StoredFile(filepath, originalFilename, storedFilename);
     }
 
@@ -184,8 +189,14 @@ public class FileStorage {
     public record StoredFile(Path path, String originalFilename, String storedFilename) {
     }
 
-    public Path retrieve(String filename) throws NoSuchFileException, SecurityException {
+    public Path retrieve(String filename, Username username) throws NoSuchFileException, SecurityException, AccessDeniedException {
         Path filepath = m_storagebox.resolve(filename);
+
+        // Check if the user is the owner of the file
+        if (!isOwner(filepath, username)) {
+            throw new org.springframework.security.access.AccessDeniedException("User is not the owner of the file");
+        }
+
         // Prevent path traversal attacks
         if (!filepath.startsWith(m_storagebox) || filename.contains("..")) {
             throw new SecurityException("Path traversal attempt detected: " + filename);
@@ -202,5 +213,16 @@ public class FileStorage {
             throw new NoSuchFileException("File not found");
         }
         return files.get(path);
+    }
+
+    public static boolean isOwner(Path path, Username username){
+        if (path == null || username == null) {
+            return false;
+        }
+        List<Username> owners = file_owners.get(path);
+            if (owners == null) {
+                return false;
+            }
+            return owners.contains(username);
     }
 }

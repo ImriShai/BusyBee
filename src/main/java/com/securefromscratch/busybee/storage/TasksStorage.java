@@ -2,6 +2,7 @@ package com.securefromscratch.busybee.storage;
 
 import com.securefromscratch.busybee.exceptions.TaskNotFoundException;
 import com.securefromscratch.busybee.safety.*;
+import jakarta.validation.constraints.NotNull;
 import org.owasp.safetypes.exception.TypeValidationException;
 import org.springframework.stereotype.Service;
 
@@ -38,21 +39,26 @@ public class TasksStorage {
         return m_tasks;
     }
 
-    public UUID add(String name, String desc, String[] responsibilityOf) throws IOException, TypeValidationException {
+    public List<Task> getTasks(Username related) {
+        logger.info("Fetching tasks related to: " + related);
+        return m_tasks.stream().filter((other) -> other.isResponsibleFor(related)).toList();
+    }
+
+    public UUID add(String name, String desc,String createdBy, String[] responsibilityOf) throws IOException, TypeValidationException {
         logger.info("Adding new task with name: " + name);
-        Task newTask = new Task(new Name(name), new Description(desc), new Username("Yariv"), createUsernames(responsibilityOf));
+        Task newTask = new Task(new Name(name), new Description(desc), new Username(createdBy), createUsernames(responsibilityOf));
         return add(newTask);
     }
 
-    public UUID add(String name, String desc, LocalDate dueDate, String[] responsibilityOf) throws IOException, TypeValidationException {
+    public UUID add(String name, String desc, LocalDate dueDate,String createdBy, String[] responsibilityOf) throws IOException, TypeValidationException {
         logger.info("Adding new task with name: " + name + " and due date: " + dueDate);
-        Task newTask = new Task(new Name(name), new Description(desc), new DueDate(dueDate), new Username("Yariv"), createUsernames(responsibilityOf));
+        Task newTask = new Task(new Name(name), new Description(desc), new DueDate(dueDate), new Username(createdBy), createUsernames(responsibilityOf));
         return add(newTask);
     }
 
-    public UUID add(String name, String desc, LocalDate dueDate, LocalTime dueTime, String[] responsibilityOf) throws IOException, TypeValidationException {
+    public UUID add(String name, String desc, LocalDate dueDate, LocalTime dueTime,String createdBy, String[] responsibilityOf) throws IOException, TypeValidationException {
         logger.info("Adding new task with name: " + name + ", due date: " + dueDate + " and due time: " + dueTime);
-        Task newTask = new Task(new Name(name), new Description(desc), new DueDate(dueDate), new DueTime(dueTime), new Username("Yariv"), createUsernames(responsibilityOf));
+        Task newTask = new Task(new Name(name), new Description(desc), new DueDate(dueDate), new DueTime(dueTime), new Username(createdBy), createUsernames(responsibilityOf));
         return add(newTask);
     }
 
@@ -184,4 +190,6 @@ public class TasksStorage {
         logger.info("Checking if task ID exists: " + taskid);
         return m_tasks.stream().anyMatch((other) -> other.taskid().equals(taskid));
     }
+
+
 }

@@ -1,5 +1,6 @@
 package com.securefromscratch.busybee.controllers.Advices;
 
+import com.securefromscratch.busybee.controllers.AuthController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.MethodParameter;
@@ -10,6 +11,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestBodyAdviceAd
 
 import java.lang.reflect.Type;
 import java.util.Map;
+import java.util.Objects;
 
 @ControllerAdvice
 public class SensitiveDataMaskingAdviceController extends RequestBodyAdviceAdapter {
@@ -24,7 +26,7 @@ public class SensitiveDataMaskingAdviceController extends RequestBodyAdviceAdapt
     public Object afterBodyRead(Object body, HttpInputMessage inputMessage, MethodParameter parameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
         if (body instanceof Map) {
             Map<String, Object> map = (Map<String, Object>) body;
-            if (map.containsKey("password")) {
+            if (map.containsKey("password") && !Objects.requireNonNull(parameter.getMethod()).getName().equals("register")) {
                 map.put("password", "****");
             }
         }

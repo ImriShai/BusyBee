@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import java.io.InvalidClassException;
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 import java.util.Map;
@@ -177,6 +180,25 @@ public class GlobalExceptionHandler {
         response.put("message", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(InvalidClassException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidClassException(InvalidClassException ex, WebRequest request) {
+        LOGGER.error("Invalid class: {}", ex.getMessage());
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Invalid class");
+        response.put("message", "File format is invalid. Your file may be corrupted or too old");
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, String>> handleNoResourceFoundException(NoResourceFoundException ex, WebRequest request) {
+        LOGGER.error("No resource found: {}", ex.getMessage());
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "No resource found");
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+
 
     // Handle all other exceptions
     @ExceptionHandler(Exception.class)

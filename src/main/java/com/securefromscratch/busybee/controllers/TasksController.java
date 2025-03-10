@@ -11,6 +11,10 @@ import org.apache.commons.collections4.Transformer;
 import org.owasp.safetypes.exception.TypeValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +38,8 @@ public class TasksController {
     }
 
     @GetMapping("/tasks")
-    public Collection<TaskOut> getTasks() {
-        List<Task> allTasks = m_tasks.getAll();
+    public Collection<TaskOut> getTasks(@AuthenticationPrincipal UserDetails userDetails) throws TypeValidationException {
+        List<Task> allTasks = m_tasks.getTasks(new Username(userDetails.getUsername()));
         Transformer<Task, TaskOut> transformer = t -> TaskOut.fromTask((Task) t);
         return CollectionUtils.collect(allTasks, transformer);
     }
@@ -44,7 +48,7 @@ public class TasksController {
     public record MarkDoneResponse(boolean success) {}
 
     @PostMapping("/done")
-    public ResponseEntity<MarkDoneResponse> markTaskDone(@RequestBody MarkDoneRequest request) throws IOException {
+    public ResponseEntity<MarkDoneResponse> markTaskDone(@RequestBody MarkDoneRequest request, @AuthenticationPrincipal UserDetails userDetails) throws IOException, TypeValidationException {
         // Validate that the taskid is a legal UUID
         UUID taskId = UUID.fromString(request.taskid().toString());
 
@@ -52,6 +56,12 @@ public class TasksController {
         Optional<Task> taskOptional = m_tasks.find(taskId);
         if (taskOptional.isEmpty()) {
             throw new TaskNotFoundException(request.taskid());
+        }
+
+        // Check that the user is responsible for the task
+        Task task = taskOptional.get();
+        if (!task.isResponsibleFor(new Username(userDetails.getUsername()))) {
+            throw new AccessDeniedException("User is not responsible for the task");
         }
 
         // Mark the task as done
@@ -68,11 +78,18 @@ public class TasksController {
     ) {}
 
     @PostMapping("/create")
-    public ResponseEntity<UUID> create(@RequestBody CreateTaskRequest request) throws TypeValidationException, IOException, ConflictException {
-        // Check if task name already exists
-        if (m_tasks.isTaskNameExists(request.name().get())) {
-            throw new ConflictException("Task name already exists: " + request.name().get());
-        }
+    public ResponseEntity<UUID> create(@RequestBody CreateTaskRequest request, @AuthenticationPrincipal UserDetails userDetails) throws TypeValidationException, IOException, ConflictException {
+
+        Username currentUser = new Username(userDetails.getUsername());
+
+        // Check if task name already exists for this user or one of the responsible users
+       List<Task> allTasks = m_tasks.getAll();
+       for (Task task : allTasks) {
+              if (task.name().equals(request.name()) &&( (task.createdBy().equals(currentUser) || Arrays.stream(request.responsibilityOf()).anyMatch(task::isResponsibleFor)))) {
+                throw new ConflictException("Task name already exists");
+              }
+       }
+
 
         UUID taskId;
 
@@ -80,6 +97,7 @@ public class TasksController {
             taskId = m_tasks.add(
                     request.name().get(),
                     request.desc().get(),
+                    currentUser.get(),
                     Arrays.stream(request.responsibilityOf()).map(Username::get).toArray(String[]::new)
             );
         } else if (request.dueTime() == null) { // Due time is optional
@@ -87,6 +105,7 @@ public class TasksController {
                     request.name().get(),
                     request.desc().get(),
                     request.dueDate().get(),
+                    currentUser.get(),
                     Arrays.stream(request.responsibilityOf()).map(Username::get).toArray(String[]::new)
             );
         } else {
@@ -95,6 +114,7 @@ public class TasksController {
                     request.desc().get(),
                     request.dueDate().get(),
                     request.dueTime().get(),
+                    currentUser.get(),
                     Arrays.stream(request.responsibilityOf()).map(Username::get).toArray(String[]::new)
             );
         }

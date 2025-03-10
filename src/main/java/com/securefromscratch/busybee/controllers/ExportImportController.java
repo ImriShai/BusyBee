@@ -1,8 +1,10 @@
 package com.securefromscratch.busybee.controllers;
 
 import com.securefromscratch.busybee.exceptions.*;
+import com.securefromscratch.busybee.safety.Username;
 import com.securefromscratch.busybee.storage.Task;
 import com.securefromscratch.busybee.storage.TasksStorage;
+import org.checkerframework.checker.units.qual.A;
 import org.owasp.safetypes.exception.TypeValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,8 +36,10 @@ public class ExportImportController {
     private TasksStorage m_tasks;
 
     @GetMapping("/extra/export")
-    public ResponseEntity<byte[]> exportTasks() throws IOException {
-        List<Task> allTasks = m_tasks.getAll();
+    public ResponseEntity<byte[]> exportTasks(@AuthenticationPrincipal UserDetails userDetails) throws IOException, TypeValidationException {
+        Username username = new Username(userDetails.getUsername());
+
+        List<Task> allTasks = m_tasks.getTasks(username);
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
@@ -54,18 +61,21 @@ public class ExportImportController {
     }
 
     @PostMapping("/extra/import")
-    public ResponseEntity<String> importTasks(@RequestParam("file") MultipartFile file) throws IOException, ClassNotFoundException {
-        LOGGER.info("Import request received");
+    public ResponseEntity<String> importTasks(@RequestParam("file") MultipartFile file, @AuthenticationPrincipal UserDetails userDetails) throws IOException, ClassNotFoundException, TypeValidationException {
+        Username username = new Username(userDetails.getUsername());
+        LOGGER.info("Import request received from user: {}", username.get());
+
+
 
         // DoS Protection: Check if the user has exceeded the import limit
-        List<Instant> timestamps = userImportTimestamps.getOrDefault("Yariv", List.of());
+        List<Instant> timestamps = userImportTimestamps.getOrDefault(username.get(), List.of());
         Instant oneHourAgo = Instant.now().minusSeconds(3600);
         List<Instant> recentTimestamps = new ArrayList<>(timestamps.stream()
                 .filter(timestamp -> timestamp.isAfter(oneHourAgo))
                 .toList());
 
         if (recentTimestamps.size() >= MAX_IMPORTS_PER_HOUR) {
-            LOGGER.warn("Import limit exceeded for user Yariv");
+            LOGGER.warn("Import limit exceeded for user{}", username.get());
             throw new TooManyRequestsException("Import limit exceeded.");
         }
 
@@ -111,14 +121,20 @@ public class ExportImportController {
                     throw new ConflictException("Duplicate task detected.");
                 }
 
-                // Check for duplicate tasks
-                if (m_tasks.isTaskNameExists(task.name().get()) || m_tasks.isTaskIdExists(task.taskid())) {
+                // Check for duplicate tasks for the user in the storage
+                if (m_tasks.isTaskNameExists(task.name().get())&&(task.isResponsibleFor(username)) || m_tasks.isTaskIdExists(task.taskid())) {
                     LOGGER.info("Duplicate task detected in storage: {}", task.name().get());
                     throw new ConflictException("Duplicate task detected.");
                 }
+
+                // Check that all the tasks are assigned to the user
+                if (!task.isResponsibleFor(username)) {
+                    LOGGER.info("Task not assigned to user: {}", task.name().get());
+                    throw new AccessDeniedException("Task not assigned to user.");
+                }
             }
 
-            // If all tasks are valid and no duplicates are found, add them to the storage
+            // If all tasks are valid, the user is related to each,  and no duplicates are found, add them to the storage
             for (Object taskObj : taskList) {
                 Task task = (Task) taskObj;
                 m_tasks.add(task);
@@ -126,7 +142,7 @@ public class ExportImportController {
 
             // Update the user's import timestamps
             recentTimestamps.add(Instant.now());
-            userImportTimestamps.put("Yariv", recentTimestamps);
+            userImportTimestamps.put(username.get(), recentTimestamps);
 
             LOGGER.info("Tasks imported successfully");
             return ResponseEntity.ok("Tasks imported successfully.");

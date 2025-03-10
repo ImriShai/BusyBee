@@ -30,7 +30,8 @@ public class InitialDataGenerator {
                                     </ul>
                                 """),
                         new DueDate(randomFutureDates.remove(randomFutureDates.size() - 1).toLocalDate()),
-                        new Username("Yariv"), randomPastDates.remove(0)
+                        new Username("Yariv"),new Username[] {new Username("Rita"), new Username("Rami")} ,randomPastDates.remove(0)
+
                 ),
                 new Task(
                         new Name("Get sticker for car"),
@@ -44,7 +45,7 @@ public class InitialDataGenerator {
                         new Description("Winter is Coming"),
                         new DueDate(LocalDate.now().plusDays(20)),
                         new Username("Ariel Security Department"),
-                        new Username[]{new Username("Yariv")}, randomPastDates.remove(0)
+                        new Username[]{new Username("Yariv"), new Username("Or")},  randomPastDates.remove(0)
                 ),
                 new Task(
                         new Name("Prepare lab report 1"),
@@ -52,7 +53,7 @@ public class InitialDataGenerator {
                         new DueDate(LocalDate.now()),
                         new DueTime(randomFutureDates.remove(randomFutureDates.size() - 1).toLocalTime()),
                         new Username("Yariv"),
-                        new Username[]{new Username("Students")}, randomPastDates.remove(0)
+                        new Username[]{new Username("Students"), new Username("Nisan"), new Username("Rony"), new Username("Aviv")}, randomPastDates.remove(0)
                 )
         ));
         Task updatedTask = tasks.get(0).withComment(new TaskComment(

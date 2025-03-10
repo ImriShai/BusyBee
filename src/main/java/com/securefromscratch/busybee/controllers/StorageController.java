@@ -1,11 +1,17 @@
 package com.securefromscratch.busybee.controllers;
 
 import com.securefromscratch.busybee.exceptions.*;
+import com.securefromscratch.busybee.safety.Username;
 import com.securefromscratch.busybee.storage.FileStorage;
+import org.owasp.safetypes.exception.TypeValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriUtils;
 
@@ -28,7 +34,7 @@ public class StorageController {
     @Autowired
     private FileStorage m_files;
     private final ConcurrentMap<String, List<Instant>> userFilesDownloadsTimestamps = new ConcurrentHashMap<>();
-    private static final int MAX_FILE_DOWNLOADS_PER_HOUR = 0;
+    private static final int MAX_FILE_DOWNLOADS_PER_HOUR = 5;
 
     public StorageController() throws IOException {
         // Use an absolute path or ensure the relative path is correct
@@ -37,14 +43,17 @@ public class StorageController {
     }
 
     @GetMapping("/image")
-    public ResponseEntity<byte[]> getImage(@RequestParam String img) throws IOException {
-        return serveFile(img, FileStorage.FileType.IMAGE, false);
+    public ResponseEntity<byte[]> getImage(@RequestParam String img, @AuthenticationPrincipal UserDetails userDetails) throws IOException, TypeValidationException {
+        return serveFile(img, FileStorage.FileType.IMAGE, false, new Username(userDetails.getUsername()));
     }
 
     @GetMapping("/attachment")
-    public ResponseEntity<byte[]> getAttachment(@RequestParam String file) throws IOException {
+    public ResponseEntity<byte[]> getAttachment(@RequestParam String file, @AuthenticationPrincipal UserDetails userDetails) throws IOException, TypeValidationException {
+
+        Username username = new Username(userDetails.getUsername());
+
         // Check if already exceeded the limit
-        List<Instant> timestamps = userFilesDownloadsTimestamps.getOrDefault("Yariv", List.of());
+        List<Instant> timestamps = userFilesDownloadsTimestamps.getOrDefault(username.get(), List.of());
         Instant oneHourAgo = Instant.now().minusSeconds(3600);
         List<Instant> recentTimestamps = new ArrayList<>(timestamps.stream()
                 .filter(timestamp -> timestamp.isAfter(oneHourAgo))
@@ -54,16 +63,16 @@ public class StorageController {
             throw new TooManyRequestsException("Download limit exceeded.");
         }
 
-        ResponseEntity<byte[]> response = serveFile(file, FileStorage.FileType.OTHER, true);
+        ResponseEntity<byte[]> response = serveFile(file, FileStorage.FileType.OTHER, true, username);
         if (response.getStatusCode() == HttpStatus.OK) {
             // Update the user's import timestamps
             recentTimestamps.add(Instant.now());
-            userFilesDownloadsTimestamps.put("Yariv", recentTimestamps);
+            userFilesDownloadsTimestamps.put(username.get(), recentTimestamps);
         }
         return response;
     }
 
-    private ResponseEntity<byte[]> serveFile(String filename, FileStorage.FileType expectedType, boolean forceDownload) throws IOException {
+    private ResponseEntity<byte[]> serveFile(String filename, FileStorage.FileType expectedType, boolean forceDownload, Username username) throws IOException, SecurityException, AccessDeniedException {
         if (filename == null || filename.isEmpty()) {
             LOGGER.warn("Invalid filename requested");
             throw new BadRequestException("Invalid filename requested.");
@@ -71,7 +80,7 @@ public class StorageController {
         if (filename.startsWith("uploads/")) { // Remove the uploads/ prefix if it exists
             filename = filename.substring(8);
         }
-        Path filePath = m_files.retrieve(filename);
+        Path filePath = m_files.retrieve(filename, username);
         String originalFilename = FileStorage.retrieveOriginalFilename(filePath);
 
         // Validate file type using FileStorage's identifyType method
