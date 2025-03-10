@@ -154,7 +154,7 @@ public final class Task implements Serializable {
     }
 
     // Factory method to mark the task as done
-    public static Task asDone(Task task) throws TypeValidationException {
+    public static Task asDone(Task task, boolean done) throws TypeValidationException {
         return new Task(
                 task.m_taskid,
                 task.m_name,
@@ -164,7 +164,7 @@ public final class Task implements Serializable {
                 task.m_createdBy,
                 task.m_responsibilityOf,
                 task.creationDatetime(),
-                true,
+                done,
                 task.m_comments
         );
     }

@@ -44,13 +44,14 @@ public class TasksController {
         return CollectionUtils.collect(allTasks, transformer);
     }
 
-    public record MarkDoneRequest(@NotNull UUID taskid) {}
+    public record MarkDoneRequest(@NotNull UUID taskid,@NotNull boolean done) {}
     public record MarkDoneResponse(boolean success) {}
 
     @PostMapping("/done")
     public ResponseEntity<MarkDoneResponse> markTaskDone(@RequestBody MarkDoneRequest request, @AuthenticationPrincipal UserDetails userDetails) throws IOException, TypeValidationException {
         // Validate that the taskid is a legal UUID
         UUID taskId = UUID.fromString(request.taskid().toString());
+        boolean done = request.done;
 
         // Check if the task exists, return 404 if not
         Optional<Task> taskOptional = m_tasks.find(taskId);
@@ -65,7 +66,7 @@ public class TasksController {
         }
 
         // Mark the task as done
-        boolean oldValue = m_tasks.markDone(request.taskid());
+        boolean oldValue = m_tasks.markDone(request.taskid(), done);
         return ResponseEntity.ok(new MarkDoneResponse(!oldValue));
     }
 

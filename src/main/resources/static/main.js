@@ -71,18 +71,18 @@ async function fetchTasks() {
 
 async function markTaskAsDone(taskId, checkbox) {
     try {
-        const response = await sendPost("/done", { taskid: taskId });
+        const done = checkbox.checked;
+        const response = await sendPost("/done", { taskid: taskId, done: done });
         if (response.ok) {
-            checkbox.checked = true;
-            checkbox.readOnly = true;
+            checkbox.readOnly = done;
         } else {
             const errorMessage = await response.json().then(data => data.message);
             throw new Error(errorMessage);
         }
     } catch (error) {
-        console.error('Failed to mark task as done:', error);
-        alert('Failed to mark task as done: ' + error.message);
-        checkbox.checked = false; // Uncheck if the request fails
+        console.error('Failed to update task status:', error);
+        alert('Failed to update task status: ' + error.message);
+        checkbox.checked = !checkbox.checked; // Revert checkbox state if the request fails
     }
 }
 
@@ -155,9 +155,7 @@ function createDoneCheckbox(task) {
     checkbox.readOnly = task.done;
     checkbox.onclick = (event) => {
         //event.stopPropagation(); // Prevent triggering the <summary> toggle
-        if (!checkbox.readOnly) {
             markTaskAsDone(task.taskid, checkbox);
-        }
     };
     return checkbox;
 }

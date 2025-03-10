@@ -62,20 +62,20 @@ public class TasksStorage {
         return add(newTask);
     }
 
-    public boolean markDone(UUID taskid) throws IOException {
-        logger.info("Marking task as done with ID: " + taskid);
+    public boolean markDone(UUID taskid, boolean done) throws IOException {
+        logger.info("Marking task as " + done + " with ID: " + taskid);
         List<Task> modifiableTasks = new ArrayList<>(m_tasks);
         Iterator<Task> tasksItr = modifiableTasks.iterator();
         try {
             while (tasksItr.hasNext()) {
                 Task t = tasksItr.next();
                 if (t.taskid().equals(taskid)) {
-                    if (t.done()) {
-                        logger.info("Task already marked as done: " + taskid);
+                    if (t.done() == done) {
+                        logger.info("Task already marked as done " + done + ": " + taskid);
                         return true;
                     }
                     tasksItr.remove();
-                    Task doneTask = Task.asDone(t);
+                    Task doneTask = Task.asDone(t, done);
                     modifiableTasks.add(doneTask);
                     try {
                         saveTasks(modifiableTasks);
