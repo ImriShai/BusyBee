@@ -36,12 +36,14 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         const username = document.getElementById('new-username').value.trim();
         const password = document.getElementById('new-password').value.trim();
+        const csrfToken = getCookie('XSRF-TOKEN');
 
         try {
             const response = await fetch('/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
+                    , 'X-XSRF-TOKEN': csrfToken
                 },
                 body: JSON.stringify({
                     username: username,
@@ -70,5 +72,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     function showError(message) {
         errorMessageElement.textContent = message;
         errorMessageElement.classList.remove('hidden');
+    }
+
+    // Helper function to retrieve a cookie by name
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
     }
 });
