@@ -43,7 +43,7 @@ public class CommentText implements Serializable {
                 .toFactory();
         String sanitizedValue = policy.sanitize(value);
 
-        if (!sanitizedValue.equals(value)) {
+        if (!sanitizedValue.equalsIgnoreCase(value)) {
             throw new TypeValidationException("Name contains invalid characters after sanitization");
         }
     }

@@ -211,7 +211,7 @@ function createComments(taskid, comments) {
 
         const textElement = document.createElement("span");
         textElement.className = "text";
-        textElement.textContent = `${comment.text}`;
+        textElement.innerHTML = `${comment.text}`;
         commentElement.appendChild(textElement);
 
         if (comment.attachment) {

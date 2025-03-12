@@ -2,6 +2,7 @@ package com.securefromscratch.busybee.controllers;
 
 import com.securefromscratch.busybee.exceptions.*;
 import com.securefromscratch.busybee.safety.Username;
+import com.securefromscratch.busybee.storage.FileStorage;
 import com.securefromscratch.busybee.storage.Task;
 import com.securefromscratch.busybee.storage.TasksStorage;
 import org.checkerframework.checker.units.qual.A;
@@ -139,6 +140,10 @@ public class ExportImportController {
                 Task task = (Task) taskObj;
                 m_tasks.add(task);
             }
+
+            // Initialize files for the tasks, if any, so related users could fetch them later
+            List<Task> tasks = m_tasks.getTasks(username);
+            FileStorage.initFiles(tasks);
 
             // Update the user's import timestamps
             recentTimestamps.add(Instant.now());

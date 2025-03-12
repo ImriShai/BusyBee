@@ -7,6 +7,7 @@ document.getElementById("importForm").onsubmit = async function(event) {
     // Add file to FormData
     formData.append("file", fileInput.files[0]);
 
+
     try {
         const response = await sendPost("/extra/import", formData);
         if (response.ok) {

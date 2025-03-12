@@ -1,28 +1,26 @@
 let csrfToken = null;
-let csrfHeaderName = null;
 
 document.addEventListener('DOMContentLoaded', async function () {
     // Fetch CSRF token on page load
     try {
-        csrfToken = "dummy";
-        csrfHeaderName = "X-CSRF-TOKEN";
 
-        // const response = await fetch('/gencsrftoken', {
-        //     method: 'GET'
-        //     , credentials: 'same-origin', // Ensures cookies are sent
-        // });
-        //
-        // if (response.ok) {
-        //     const data = await response.json();
-        //     csrfToken = data.token;
-        //     csrfHeaderName = data.headerName;
-        //     console.log('CSRF token:', csrfToken);
-        //     console.log('CSRF header name:', csrfHeaderName);
-        //
-        //
-        // } else {
-        //     console.error('Failed to fetch CSRF token:', response.status);
-        // }
+
+        const response = await fetch('/gencsrftoken', {
+            method: 'GET'
+            , credentials: 'same-origin', // Ensures cookies are sent
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            csrfToken = data.token;
+            csrfHeaderName = data.headerName;
+            console.log('CSRF token:', csrfToken);
+            console.log('CSRF header name:', csrfHeaderName);
+
+
+        } else {
+            console.error('Failed to fetch CSRF token:', response.status);
+        }
     } catch (error) {
         console.error('Error fetching CSRF token:', error);
     }
@@ -36,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         const username = document.getElementById('new-username').value.trim();
         const password = document.getElementById('new-password').value.trim();
-        const csrfToken = getCookie('XSRF-TOKEN');
+        // const csrfToken = getCookie('XSRF-TOKEN');
 
         try {
             const response = await fetch('/register', {
@@ -55,9 +53,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                 const data = await response.json();
                 localStorage.setItem('username', data.username);
                 window.location.href = data.redirectTo;
-            } else if (response.status === 401) {
+            } else if (response.status === 401 || response.status === 400) {
                 const errorData = await response.json();
-                showError(errorData.error);
+                showError(errorData.message);
             } else if (response.status === 409){
                 showError("Username already exists");
             }

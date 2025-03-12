@@ -21,7 +21,8 @@ public class UsersPrePopulate {
             }
 
             String username = "Imri";
-            String plainPassword = "1234";
+            // An 8 character random password
+            String plainPassword =  UUID.randomUUID().toString().substring(0, 8);
             UserAccount newAccount;
             try {
                 newAccount = usersDetails.createUser(username, plainPassword);

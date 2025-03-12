@@ -58,16 +58,17 @@ public class FileStorage {
               String filename = comment.imageOrAttachment().orElse("");
               Path path = Path.of("uploads", filename);
               if (Files.exists(path)) {
-                files.put(path, originalFilename);
+                files.putIfAbsent(path, originalFilename);
                   List<Username> owners = new ArrayList<>(List.of(task.responsibilityOf()));
                   owners.add(task.createdBy());
-                file_owners.put(path, owners);
+                file_owners.putIfAbsent(path, owners);
               }
             }
           }
         }
-
     }
+
+
 
     public StoredFile store(MultipartFile file, String userId, List<Username> owners) throws IOException, TypeValidationException, SecurityException, TooManyRequestsException {
         validateFile(file);
@@ -84,8 +85,8 @@ public class FileStorage {
         file.transferTo(filepath);
 
         trackUpload(userId);
-        files.put(filepath, originalFilename);
-        file_owners.put(filepath,owners);
+        files.putIfAbsent(filepath, originalFilename);
+        file_owners.putIfAbsent(filepath,owners);
         return new StoredFile(filepath, originalFilename, storedFilename);
     }
 

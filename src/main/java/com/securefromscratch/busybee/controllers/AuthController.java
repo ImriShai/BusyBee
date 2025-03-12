@@ -6,6 +6,7 @@ import com.securefromscratch.busybee.safety.Name;
 import com.securefromscratch.busybee.storage.Task;
 import com.securefromscratch.busybee.storage.TasksStorage;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.owasp.safetypes.exception.TypeValidationException;
 import org.slf4j.Logger;
@@ -23,6 +24,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfToken;
+
+
 
 import java.io.*;
 import java.time.Instant;
@@ -36,13 +41,23 @@ import com.securefromscratch.busybee.auth.UsersStorage;
 public class AuthController {
         private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
         private final UsernamePasswordDetailsService m_usernamePasswordDetailsService;
+        private final CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
 
     @Autowired
     private AuthenticationManager authenticationManager;
 
-        public AuthController(UsersStorage usersStorage) throws TypeValidationException, IOException, ClassNotFoundException {
+        public AuthController(UsersStorage usersStorage) {
             this.m_usernamePasswordDetailsService = new UsernamePasswordDetailsService(usersStorage);
         }
+
+
+    public record CsrfTokenResponse(String token, String str, String headerName, String paramName) {}
+    @GetMapping("/gencsrftoken")
+    public ResponseEntity<CsrfTokenResponse> getCsrfToken(HttpServletRequest request, HttpServletResponse response) {
+        CsrfToken token = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+        return ResponseEntity.ok(new CsrfTokenResponse(token.getToken(), token.toString(), token.getHeaderName(), token.getParameterName()));
+    }
+
 
 
     @PostMapping("/register")

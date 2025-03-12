@@ -45,15 +45,15 @@ public final class Username extends BoundedString implements Serializable {
         }
 
         if (value.matches(".*[<>].*")) {
-            throw new TypeValidationException("Username must not contain HTML tags");
+            throw new SecurityException("Username must not contain HTML tags");
         }
 
         if (!value.matches("^[a-zA-Z0-9\u0590-\u05FF ]*$")) {
-            throw new SecurityException("Username must contain only letters, numbers, and spaces");
+            throw new TypeValidationException("Username must contain only letters and numbers");
         }
 
         if (!value.matches("^[a-zA-Z\u0590-\u05FF].*")) {
-            throw new SecurityException("Username must start with a letter");
+            throw new TypeValidationException("Username must start with a letter");
         }
 
         PolicyFactory policy = new HtmlPolicyBuilder()

@@ -12,7 +12,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public class InitialDataGenerator {
     public static void fillWithData(List<Task> tasks) throws TypeValidationException {
         List<LocalDateTime> randomPastDates = generateRandomDateTimes(15, 5);
-        randomPastDates.sort(LocalDateTime::compareTo);
         List<LocalDateTime> randomFutureDates = generateRandomDateTimes(10, -5);
 
         tasks.addAll(List.of(
