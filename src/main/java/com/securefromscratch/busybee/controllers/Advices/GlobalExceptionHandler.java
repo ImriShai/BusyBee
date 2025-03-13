@@ -221,6 +221,7 @@ public class GlobalExceptionHandler {
             response.put("message", ex.getCause().getMessage());
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
+
         LOGGER.error("An error occurred: {}", ex.getMessage());
         Map<String, String> response = new HashMap<>();
         response.put("error", "An error occurred");

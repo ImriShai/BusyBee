@@ -62,7 +62,7 @@ public class TaskComment implements java.io.Serializable {
         this(UUID.randomUUID(), text, image, attachment, indent, createdBy, createdOn, Optional.empty());
     }
 
-    private TaskComment(UUID commentid, String text, Optional<String> image, Optional<String> attachment, int indent, Username createdBy, LocalDateTime createdOn, Optional<String> originalFilename) throws TypeValidationException {
+    private TaskComment(UUID commentid, String text, Optional<String> image, Optional<String> attachment, int indent, Username createdBy, LocalDateTime createdOn, Optional<String> originalFilename) throws TypeValidationException, SecurityException {
         this.commentid = commentid;
         this.text = text;
 
@@ -88,6 +88,10 @@ public class TaskComment implements java.io.Serializable {
         this.createdBy = createdBy;
         this.dateCreatedOn = new DueDate(createdOn.toLocalDate());
         this.timeCreatedOn = new DueTime(createdOn.toLocalTime());
+        //prevent path traversal attacks
+        if (attachedFile != null && (!attachedFile.matches("^[a-zA-Z0-9_()\\-.,+!#@$%^\\[\\]& \\p{IsHebrew}]+$") || attachedFile.contains(".."))) {
+            throw new SecurityException("Invalid file name - path traversal attempt detected");
+        }
         this.originalFilename = originalAttachedFilename;
     }
 

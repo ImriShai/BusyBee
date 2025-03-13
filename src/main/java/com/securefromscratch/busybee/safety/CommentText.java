@@ -4,7 +4,7 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 import org.owasp.safetypes.exception.TypeValidationException;
 
-import java.io.Serializable;
+import java.io.*;
 
 public class CommentText implements Serializable {
     public static final int MIN_LENGTH = 0;
@@ -47,4 +47,18 @@ public class CommentText implements Serializable {
             throw new TypeValidationException("Name contains invalid characters after sanitization");
         }
     }
+    // Custom serialization logic
+    @Serial
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+        out.writeUTF(get()); // Serialize the underlying string value
+    }
+
+    @Serial
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException, TypeValidationException {
+        in.defaultReadObject();
+        String value = in.readUTF(); // Deserialize the underlying string value
+        validateComment(value); // Revalidate the deserialized value
+    }
+
 }

@@ -1,9 +1,11 @@
 package com.securefromscratch.busybee.controllers;
 
+import com.securefromscratch.busybee.auth.UsersStorage;
 import com.securefromscratch.busybee.exceptions.*;
 import com.securefromscratch.busybee.safety.Username;
 import com.securefromscratch.busybee.storage.FileStorage;
 import com.securefromscratch.busybee.storage.Task;
+import com.securefromscratch.busybee.storage.TaskComment;
 import com.securefromscratch.busybee.storage.TasksStorage;
 import org.checkerframework.checker.units.qual.A;
 import org.owasp.safetypes.exception.TypeValidationException;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,6 +38,8 @@ public class ExportImportController {
 
     @Autowired
     private TasksStorage m_tasks;
+    @Autowired
+    private UsersStorage m_users;
 
     @GetMapping("/extra/export")
     public ResponseEntity<byte[]> exportTasks(@AuthenticationPrincipal UserDetails userDetails) throws IOException, TypeValidationException {
@@ -62,7 +67,7 @@ public class ExportImportController {
     }
 
     @PostMapping("/extra/import")
-    public ResponseEntity<String> importTasks(@RequestParam("file") MultipartFile file, @AuthenticationPrincipal UserDetails userDetails) throws IOException, ClassNotFoundException, TypeValidationException {
+    public ResponseEntity<String> importTasks(@RequestParam("file") MultipartFile file, @AuthenticationPrincipal UserDetails userDetails) throws TypeValidationException, BadRequestException, UserDoesNotExistException {
         Username username = new Username(userDetails.getUsername());
         LOGGER.info("Import request received from user: {}", username.get());
 
@@ -110,12 +115,6 @@ public class ExportImportController {
                     throw new BadRequestException("Invalid task data format.");
                 }
 
-                // Validate DueDate + DueTime
-                if (!task.isDueDateTimeValid()) {
-                    LOGGER.info("Invalid due date or due time for task: {}", task.name().get());
-                    throw new BadRequestException("Invalid due date or due time.");
-                }
-
                 // Check for duplicate tasks in the imported list
                 if (!taskNames.add(task.name().get()) || !taskIds.add(task.taskid())) {
                     LOGGER.info("Duplicate task detected in the imported list: {}", task.name().get());
@@ -133,6 +132,18 @@ public class ExportImportController {
                     LOGGER.info("Task not assigned to user: {}", task.name().get());
                     throw new AccessDeniedException("Task not assigned to user.");
                 }
+
+                // check that all the users actually exist
+                if((m_users.findByUsername(task.createdBy().get()).isEmpty()) && !m_users.isUserExists(task.responsibilityOf()) ) {
+                    LOGGER.info("User not found: {}", task.createdBy().get());
+                    throw new UserDoesNotExistException("User not found: " + task.createdBy().get());
+                }
+                // Check that all the comments are created by existing users
+                if (!commentsUsersExist(task.comments())) {
+                    LOGGER.info("User not found in comments");
+                    throw new UserDoesNotExistException("User not found in comments");
+                }
+
             }
 
             // If all tasks are valid, the user is related to each,  and no duplicates are found, add them to the storage
@@ -152,5 +163,45 @@ public class ExportImportController {
             LOGGER.info("Tasks imported successfully");
             return ResponseEntity.ok("Tasks imported successfully.");
         }
+        catch (Exception e) {
+            LOGGER.error("Error importing : {}", e.getMessage());
+            if(e instanceof InvalidClassException ) {
+                if(e.getMessage().contains("REJECTED")) {
+                    throw new SecurityException("Your file Seems to be malicious. Please contact support.");
+                }
+                throw new BadRequestException("Invalid file content. Your file may be corrupted or too old.");
+            }
+            else if(e.getCause() instanceof TypeValidationException) {
+                throw new BadRequestException("Error importing tasks. Your file may be corrupted: " + e.getCause().getMessage());
+            }
+            else if(e instanceof PayloadTooLargeException) {
+                throw new PayloadTooLargeException("File too large. Max allowed size: 10KB.");
+            }
+            else if(e instanceof TooManyRequestsException) {
+                throw new TooManyRequestsException("Import limit exceeded.");
+            }
+            else if(e instanceof AccessDeniedException) {
+                throw new AccessDeniedException("Task not assigned to user.");
+            }
+            else if(e instanceof ConflictException) {
+                throw new ConflictException("Duplicate task detected.");
+            }
+            else if(e instanceof BadRequestException) {
+                throw new BadRequestException("Invalid file format. Only .ser files are allowed.");
+            }
+            else if(e instanceof IOException) {
+                throw new BadRequestException("Error importing tasks. Your file may be corrupted: " + e.getMessage());
+            }
+            throw new BadRequestException("Error importing tasks. Your file may be corrupted: " + e.getMessage());
+        }
+    }
+
+    private boolean commentsUsersExist(List<TaskComment> comments) {
+        for (TaskComment comment : comments) {
+            if(m_users.findByUsername(comment.createdBy().get()).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 }

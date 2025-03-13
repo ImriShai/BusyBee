@@ -8,6 +8,7 @@ import com.securefromscratch.busybee.safety.Name;
 import com.securefromscratch.busybee.safety.Username;
 import org.owasp.safetypes.exception.TypeValidationException;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -244,6 +245,17 @@ public final class Task implements Serializable {
     public boolean isResponsibleFor(Username username) {
         return Arrays.asList(m_responsibilityOf).contains(username) || m_createdBy.equals(username);
     }
+
+
+    // ReadObject method to validate the deserialized object
+    @Serial
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException, TypeValidationException {
+        in.defaultReadObject();
+        if (!isDueDateTimeValid()) {
+            throw new TypeValidationException("Invalid due date or due time");
+        }
+    }
+
 
 
 

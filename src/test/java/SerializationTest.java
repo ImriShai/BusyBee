@@ -107,21 +107,38 @@ public class SerializationTest {
         List<Task> tasks = new ArrayList<>();
         List<Task> tasks1 = new ArrayList<>();
         List<Task> tasks2 = new ArrayList<>();
+        List<Task> tasks3 = new ArrayList<>();
 
         // Create a valid task
         Task validTask = new Task(new Name("Valid Task"), new Description("This is a valid task"),
                 new DueDate(LocalDate.now()), new DueTime(LocalTime.MAX), new Username("User123"), new Username[]{new Username("User123")});
         tasks.add(validTask);
 
+        // Create a valid task
+        Task validTask1 = new Task(new Name("Valid Task"), new Description("This is a valid task"),
+                new DueDate(LocalDate.now()), new DueTime(LocalTime.MAX), new Username("User123"), new Username[]{new Username("User123")});
+        tasks1.add(validTask1);
+
+        // Create an invalid task with invalid DueDate and DueTime
+        Task invalidTask5 = new Task(new Name("Yariv"), new Description("Invalid date"),
+                new DueDate(LocalDate.MIN), new DueTime(LocalTime.MIN), new Username("User123"), new Username[]{new Username("User123")});
+        tasks3.add(invalidTask5);
+
+        try (FileOutputStream fos = new FileOutputStream("tasks_invalid3.ser");
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(tasks3);
+            System.out.println("Serialized tasks to tasks_invalid2.ser");
+        } catch (IOException e) {
+            e.printStackTrace();
+
+        }
+
         // Create an invalid task with invalid DueDate and DueTime
         Task invalidTask = new Task(new Name("Yariv"), new Description("<script>alert('XSS')</script>"),
                 new DueDate(LocalDate.MIN), new DueTime(LocalTime.MIN), new Username("User123"), new Username[]{new Username("User123")});
         tasks.add(invalidTask);
 
-        // Create a valid task
-        Task validTask1 = new Task(new Name("Valid Task"), new Description("This is a valid task"),
-                new DueDate(LocalDate.now()), new DueTime(LocalTime.MAX), new Username("User123"), new Username[]{new Username("User123")});
-        tasks1.add(validTask1);
+
 
         // Create an invalid task with invalid DueDate and DueTime
         Task invalidTask1= new Task(new Name("<script>alert('XSS')</script>"), new Description("Valid description"),
@@ -135,6 +152,8 @@ public class SerializationTest {
         Task invalidTask2 = new Task(new Name("inValid Task"), new Description("This is an invalid task"),
                 new DueDate(LocalDate.now()), new DueTime(LocalTime.MAX), new Username("<script>alert('XSS')</script>"), new Username[]{new Username("User123")});
         tasks2.add(invalidTask2);
+
+
         
         
         
@@ -165,5 +184,6 @@ public class SerializationTest {
             e.printStackTrace();
 
         }
+
         }
 }

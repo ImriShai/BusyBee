@@ -50,12 +50,16 @@ public class FileStorage {
 
 
     // This method goes through the tasks and initializes the files
-    public static void initFiles(List<Task> tasks) {
+    public static void initFiles(List<Task> tasks) throws SecurityException {
         for (Task task : tasks) {
           for (TaskComment comment : task.comments()) {
             if (comment.hasFile()) {
               String originalFilename = comment.originalFilename().orElse("");
               String filename = comment.imageOrAttachment().orElse("");
+              //prevent path traversal attacks
+                    if (!filename.matches("^[a-zA-Z0-9_()\\-.,+!#@$%^\\[\\]& \\p{IsHebrew}]+$") || filename.contains("..")) {
+                    throw new SecurityException("Invalid file name - path traversal attempt detected");
+                }
               Path path = Path.of("uploads", filename);
               if (Files.exists(path)) {
                 files.putIfAbsent(path, originalFilename);

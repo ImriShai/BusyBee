@@ -112,4 +112,13 @@ public class UsersStorage {
     public  List<String> getAllUsernames()  {
         return m_users.keySet().stream().toList();
     }
+
+    public boolean isUserExists(Username[] usernames) {
+        for (Username username : usernames) {
+            if (!m_users.containsKey(username.get())) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
