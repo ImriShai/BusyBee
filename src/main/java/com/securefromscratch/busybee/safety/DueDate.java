@@ -8,15 +8,15 @@ import java.time.LocalDate;
 public final class DueDate implements Serializable {
     private final LocalDate value;
 
+    public DueDate(){
+        this.value = LocalDate.now();
+    }
+
     public DueDate(LocalDate value) throws TypeValidationException  {
         if (value == null) {
             throw new TypeValidationException("Due date cannot be null");
         }
         this.value = value;
-    }
-
-    public DueDate(){
-        this.value = LocalDate.now();
     }
 
     public DueDate(LocalDate value, LocalDate creationDate, boolean isDueDate) throws TypeValidationException {

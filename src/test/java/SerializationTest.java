@@ -64,6 +64,19 @@ public class SerializationTest {
     }
 
     @Test
+    public void testCalculatorFile() {
+        try {
+           String calculator_path = "src/test/java/payload-windows (1).ser";
+            FileInputStream fileInputStream = new FileInputStream(calculator_path);
+            ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+            Object obj = objectInputStream.readObject();
+            objectInputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
     public void testCommentTextSerialization() {
         try {
             // Create a CommentText object

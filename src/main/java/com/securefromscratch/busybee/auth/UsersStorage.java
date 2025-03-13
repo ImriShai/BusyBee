@@ -1,6 +1,7 @@
 package com.securefromscratch.busybee.auth;
 
 import com.securefromscratch.busybee.exceptions.UserAlreadyExistException;
+import com.securefromscratch.busybee.safety.Username;
 import org.owasp.safetypes.exception.TypeValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,8 +15,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UsersStorage {
@@ -104,5 +107,9 @@ public class UsersStorage {
 
     public boolean hasUsers() {
         return !m_users.isEmpty();
+    }
+
+    public  List<String> getAllUsernames()  {
+        return m_users.keySet().stream().toList();
     }
 }

@@ -12,7 +12,7 @@ class TasksControllerTest {
 
     @Test
     void testSanitizeDescription_PreventXSS()  {
-        String input = "<script>alert('XSS');</script> <a href='https://example.com'>Link</a>";
+        String input = "<script>alert('XSS');</script> <a href=\"https://example.com\">Link</a>";
         String expected = " <a href=\"https://example.com\">Link</a>";
         Description description = assertDoesNotThrow(() -> new Description(input));
         assertEquals(expected, description.get());
@@ -24,9 +24,10 @@ class TasksControllerTest {
     }
 
     @Test
-    void testSanitizeDescription_AllowSafeHtml() {
-        String input = "<Strong>and</Strong> <a href='https://example.com'>a link</a>";
+    void testSanitizeDescription_AllowSafeHtml() throws TypeValidationException {
+        String input = "<strong>and</strong> <a href=\"https://example.com\">a link</a>";
         assertDoesNotThrow(() -> {new Description(input);});
+        assertEquals(input, new Description(input).get());
     }
 
     @Test

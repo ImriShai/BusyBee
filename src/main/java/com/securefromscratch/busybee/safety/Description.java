@@ -16,16 +16,15 @@ public final class Description implements Serializable {
 
     private final String desc;
 
-    // Private constructor to enforce validation
-    public Description(String value) throws TypeValidationException, SecurityException {
-       this.desc = isValidDescription(value);
 
-    }
     public Description() throws TypeValidationException {
         this.desc = isValidDescription("");
     }
 
+    public Description(String value) throws TypeValidationException, SecurityException {
+       this.desc = isValidDescription(value);
 
+    }
 
     public static String isValidDescription(String value) throws SecurityException, TypeValidationException {
 

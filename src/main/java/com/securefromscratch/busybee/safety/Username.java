@@ -23,12 +23,6 @@ public final class Username extends BoundedString implements Serializable {
         super(""); // Initialize with an empty string
     }
 
-    @ConstructorBinding
-    public Username(String value) throws TypeValidationException {
-        super(value);
-        validateName(value);
-    }
-
     @Override
     public Integer min() {
         return MIN_LENGTH;
@@ -37,6 +31,12 @@ public final class Username extends BoundedString implements Serializable {
     @Override
     public Integer max() {
         return MAX_LENGTH;
+    }
+
+    @ConstructorBinding
+    public Username(String value) throws TypeValidationException {
+        super(value);
+        validateName(value);
     }
 
     private void validateName(String value) throws TypeValidationException, SecurityException {

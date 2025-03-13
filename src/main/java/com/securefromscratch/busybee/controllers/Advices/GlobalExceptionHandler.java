@@ -174,6 +174,9 @@ public class GlobalExceptionHandler {
         if(ex.getCause() instanceof UserAlreadyExistException) {
            return handleUserAlreadyExistException((UserAlreadyExistException) ex.getCause(), request);
         }
+        else if(ex.getCause() instanceof UserDoesNotExistException){
+            return handleUserDoesNotExistException((UserDoesNotExistException) ex.getCause(), request);
+        }
         LOGGER.error("Illegal state: {}", ex.getMessage());
         Map<String, String> response = new HashMap<>();
         response.put("error", "Illegal state");
@@ -196,6 +199,14 @@ public class GlobalExceptionHandler {
         response.put("error", "No resource found");
         response.put("message", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+    @ExceptionHandler(UserDoesNotExistException.class)
+    public ResponseEntity<Map<String, String>> handleUserDoesNotExistException(UserDoesNotExistException ex, WebRequest request) {
+        LOGGER.error("User does not exist: {}", ex.getMessage());
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "User does not exist");
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
 

@@ -1,6 +1,8 @@
 package com.securefromscratch.busybee.controllers;
 
+import com.securefromscratch.busybee.auth.UsersStorage;
 import com.securefromscratch.busybee.exceptions.ConflictException;
+import com.securefromscratch.busybee.exceptions.UserDoesNotExistException;
 import com.securefromscratch.busybee.safety.*;
 import com.securefromscratch.busybee.storage.Task;
 import com.securefromscratch.busybee.exceptions.TaskNotFoundException;
@@ -31,6 +33,7 @@ public class TasksController {
 
     @Autowired
     private TasksStorage m_tasks;
+    @Autowired UsersStorage m_users;
 
     public TasksController() throws IOException {
         // Use an absolute path or ensure the relative path is correct
@@ -79,7 +82,7 @@ public class TasksController {
     ) {}
 
     @PostMapping("/create")
-    public ResponseEntity<UUID> create(@RequestBody CreateTaskRequest request, @AuthenticationPrincipal UserDetails userDetails) throws TypeValidationException, IOException, ConflictException {
+    public ResponseEntity<UUID> create(@RequestBody CreateTaskRequest request, @AuthenticationPrincipal UserDetails userDetails) throws TypeValidationException, IOException, ConflictException, UserDoesNotExistException {
 
         Username currentUser = new Username(userDetails.getUsername());
 
@@ -93,6 +96,13 @@ public class TasksController {
 
 
         UUID taskId;
+
+       List<String> usernames = Arrays.stream(request.responsibilityOf).map(Username::get).toList();
+         for (String username : usernames) {
+             if (m_users.findByUsername(username).isEmpty()) {
+                 throw new UserDoesNotExistException("User does not exist: " + username);
+             }
+         }
 
         if (request.dueDate() == null) { // Due date is optional
             taskId = m_tasks.add(

@@ -27,7 +27,7 @@ public class SerializationConfig {
                     !DueTime.class.isAssignableFrom(info.serialClass()) &&
                     !Name.class.isAssignableFrom(info.serialClass()) &&
                     !Username.class.isAssignableFrom(info.serialClass()) &&
-                    !info.serialClass().getName().startsWith("java") &&
+                    !(info.serialClass().getName().startsWith("java")&&(info.serialClass().getName().contains("."))) &&
                     !info.serialClass().isArray() &&
             !info.serialClass().getName().startsWith("com.securefromscratch.busybee.")) {
                 logger.error("Rejected class: " + info.serialClass().getName());
