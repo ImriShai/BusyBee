@@ -23,7 +23,6 @@ public class TasksStorage {
             if (tasks.isEmpty()) {
                 InitialDataGenerator.fillWithData(tasks);
             }
-
         } catch (IOException | ClassNotFoundException | TypeValidationException e) {
             tasks = new ArrayList<>();
             InitialDataGenerator.fillWithData(tasks);
@@ -43,19 +42,19 @@ public class TasksStorage {
         return m_tasks.stream().filter((other) -> other.isResponsibleFor(related)).toList();
     }
 
-    public UUID add(String name, String desc,String createdBy, String[] responsibilityOf) throws IOException, TypeValidationException {
+    public UUID add(String name, String desc, String createdBy, String[] responsibilityOf) throws IOException, TypeValidationException {
         LOGGER.info("Adding new task with name: " + name);
         Task newTask = new Task(new Name(name), new Description(desc), new Username(createdBy), createUsernames(responsibilityOf));
         return add(newTask);
     }
 
-    public UUID add(String name, String desc, LocalDate dueDate,String createdBy, String[] responsibilityOf) throws IOException, TypeValidationException {
+    public UUID add(String name, String desc, LocalDate dueDate, String createdBy, String[] responsibilityOf) throws IOException, TypeValidationException {
         LOGGER.info("Adding new task with name: " + name + " and due date: " + dueDate);
         Task newTask = new Task(new Name(name), new Description(desc), new DueDate(dueDate), new Username(createdBy), createUsernames(responsibilityOf));
         return add(newTask);
     }
 
-    public UUID add(String name, String desc, LocalDate dueDate, LocalTime dueTime,String createdBy, String[] responsibilityOf) throws IOException, TypeValidationException {
+    public UUID add(String name, String desc, LocalDate dueDate, LocalTime dueTime, String createdBy, String[] responsibilityOf) throws IOException, TypeValidationException {
         LOGGER.info("Adding new task with name: " + name + ", due date: " + dueDate + " and due time: " + dueTime);
         Task newTask = new Task(new Name(name), new Description(desc), new DueDate(dueDate), new DueTime(dueTime), new Username(createdBy), createUsernames(responsibilityOf));
         return add(newTask);
@@ -76,21 +75,15 @@ public class TasksStorage {
                     tasksItr.remove();
                     Task doneTask = Task.asDone(t, done);
                     modifiableTasks.add(doneTask);
-                    try {
-                        saveTasks(modifiableTasks);
-                        m_tasks = Collections.unmodifiableList(modifiableTasks);
-                    } catch (IOException e) {
-                        LOGGER.severe("Exception while saving tasks: " + e.getMessage());
-                        throw e;
-                    }
+                    saveTasks(modifiableTasks);
+                    m_tasks = Collections.unmodifiableList(modifiableTasks);
+                    LOGGER.info("Task marked as done: " + taskid);
                     return false;
                 }
             }
         } catch (TypeValidationException e) {
-            LOGGER.severe("Exception while marking task as done: " + e.getMessage());
             throw new RuntimeException("Failed to mark task as done", e);
         }
-        LOGGER.warning("Task not found with ID: " + taskid);
         throw new TaskNotFoundException(taskid);
     }
 
@@ -98,13 +91,9 @@ public class TasksStorage {
         LOGGER.info("Adding new task: " + newTask);
         List<Task> modifiableTasks = new ArrayList<>(m_tasks);
         modifiableTasks.add(newTask);
-        try {
-            saveTasks(modifiableTasks);
-            m_tasks = Collections.unmodifiableList(modifiableTasks);
-        } catch (IOException e) {
-            LOGGER.severe("Exception while saving tasks: " + e.getMessage());
-            throw e;
-        }
+        saveTasks(modifiableTasks);
+        m_tasks = Collections.unmodifiableList(modifiableTasks);
+        LOGGER.info("Task added successfully: " + newTask.taskid());
         return newTask.taskid();
     }
 
@@ -125,8 +114,6 @@ public class TasksStorage {
         }
     }
 
-
-
     public UUID addComment(Task task, String text, Optional<String> image, Optional<String> attachment, Optional<String> originalFilename,
                            String createdBy, Optional<UUID> after) throws IOException, TypeValidationException {
         LOGGER.info("Adding comment with image/attachment to task: " + task.taskid());
@@ -134,33 +121,17 @@ public class TasksStorage {
         UUID commentId = UUID.randomUUID();
         TaskComment newComment = new TaskComment(commentId, text, image, attachment, new Username(createdBy), after, originalFilename);
 
-        // Create a modified task with the new comment
         Task updatedTask = task.withComment(newComment);
+        updateTaskList(updatedTask);
 
-        // Update the tasks list atomically
-        try {
-            updateTaskList(updatedTask);
-        } catch (IOException e) {
-            LOGGER.severe("Exception while saving tasks: " + e.getMessage());
-            throw e;
-        }
-
-         return commentId;
+        LOGGER.info("Comment added successfully to task: " + task.taskid());
+        return commentId;
     }
 
-    /**
-     * Updates the task list atomically.
-     */
     private synchronized void updateTaskList(Task updatedTask) throws IOException {
         List<Task> modifiableTasks = new ArrayList<>(m_tasks);
-
-        // Replace the old task with the updated task
         modifiableTasks.replaceAll(task -> task.taskid().equals(updatedTask.taskid()) ? updatedTask : task);
-
-        // Persist the updated list
         saveTasks(modifiableTasks);
-
-        // Ensure thread-safety when updating the unmodifiable reference
         m_tasks = Collections.unmodifiableList(modifiableTasks);
     }
 
@@ -179,7 +150,6 @@ public class TasksStorage {
             try {
                 return new Username(name);
             } catch (TypeValidationException e) {
-                LOGGER.severe("Invalid username: " + name);
                 throw new RuntimeException("Invalid username: " + name, e);
             }
         }).toArray(Username[]::new);
@@ -189,6 +159,4 @@ public class TasksStorage {
         LOGGER.info("Checking if task ID exists: " + taskid);
         return m_tasks.stream().anyMatch((other) -> other.taskid().equals(taskid));
     }
-
-
 }
