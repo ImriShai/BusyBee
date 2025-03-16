@@ -156,7 +156,7 @@ public class FileStorage {
         if (contentType.contains("pdf") && magicByteType.contains("pdf")) {
             return FileType.PDF;
         }
-        if (contentType.contains("word") && magicByteType.contains("word")) {
+        if (contentType.contains("word") && (magicByteType.contains("word") || magicByteType.equals("application/x-tika-ooxml"))) {
             return FileType.WORD;
         }
         if ((contentType.contains("rtf")||contentType.contains("word")) && magicByteType.contains("rtf")) { //
