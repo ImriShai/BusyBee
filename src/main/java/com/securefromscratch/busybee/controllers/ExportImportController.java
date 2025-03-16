@@ -59,7 +59,7 @@ public class ExportImportController {
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("attachment", "tasks.ser");
 
-        LOGGER.info("Exported tasks successfully");
+        LOGGER.info("Exported {} tasks successfully for user {}", allTasks.size(), username.get());
 
         return ResponseEntity.ok()
                 .headers(headers)
@@ -81,19 +81,16 @@ public class ExportImportController {
                 .toList());
 
         if (recentTimestamps.size() >= MAX_IMPORTS_PER_HOUR) {
-            LOGGER.warn("Import limit exceeded for user{}", username.get());
             throw new TooManyRequestsException("Import limit exceeded.");
         }
 
         // DoS Protection: Limit file size
         if (file.getSize() > MAX_FILE_SIZE) {
-            LOGGER.warn("File too large: {} bytes", file.getSize());
             throw new PayloadTooLargeException("File too large. Max allowed size: 10KB.");
         }
 
         // Invalid File Handling
         if (file.isEmpty() || !Objects.requireNonNull(file.getOriginalFilename()).endsWith(".ser")) {
-            LOGGER.warn("Invalid file format: {}", file.getOriginalFilename());
             throw new BadRequestException("Invalid file format. Only .ser files are allowed.");
         }
 
@@ -101,7 +98,6 @@ public class ExportImportController {
             // Deserialize tasks
             Object obj = ois.readObject();
             if (!(obj instanceof List<?>)) {
-                LOGGER.warn("Invalid file content");
                 throw new BadRequestException("Invalid file content.");
             }
 
@@ -111,36 +107,30 @@ public class ExportImportController {
 
             for (Object taskObj : taskList) {
                 if (!(taskObj instanceof Task task)) {
-                    LOGGER.warn("Invalid task data format");
                     throw new BadRequestException("Invalid task data format.");
                 }
 
                 // Check for duplicate tasks in the imported list
                 if (!taskNames.add(task.name().get()) || !taskIds.add(task.taskid())) {
-                    LOGGER.info("Duplicate task detected in the imported list: {}", task.name().get());
                     throw new ConflictException("Duplicate task detected.");
                 }
 
                 // Check for duplicate tasks for the user in the storage
                 if (m_tasks.isTaskNameExists(task.name().get())&&(task.isResponsibleFor(username)) || m_tasks.isTaskIdExists(task.taskid())) {
-                    LOGGER.info("Duplicate task detected in storage: {}", task.name().get());
                     throw new ConflictException("Duplicate task detected.");
                 }
 
                 // Check that all the tasks are assigned to the user
                 if (!task.isResponsibleFor(username)) {
-                    LOGGER.info("Task not assigned to user: {}", task.name().get());
                     throw new AccessDeniedException("Task not assigned to user.");
                 }
 
                 // check that all the users actually exist
                 if((m_users.findByUsername(task.createdBy().get()).isEmpty()) && !m_users.isUserExists(task.responsibilityOf()) ) {
-                    LOGGER.info("User not found: {}", task.createdBy().get());
                     throw new UserDoesNotExistException("User not found: " + task.createdBy().get());
                 }
                 // Check that all the comments are created by existing users
                 if (!commentsUsersExist(task.comments())) {
-                    LOGGER.info("User not found in comments");
                     throw new UserDoesNotExistException("User not found in comments");
                 }
 
@@ -160,11 +150,10 @@ public class ExportImportController {
             recentTimestamps.add(Instant.now());
             userImportTimestamps.put(username.get(), recentTimestamps);
 
-            LOGGER.info("Tasks imported successfully");
+            LOGGER.info("Tasks imported successfully - {} tasks has been added to {}", taskList.size(), username.get());
             return ResponseEntity.ok("Tasks imported successfully.");
         }
         catch (Exception e) {
-            LOGGER.error("Error importing : {}", e.getMessage());
             if(e instanceof InvalidClassException ) {
                 if(e.getMessage().contains("REJECTED")) {
                     throw new SecurityException("Your file Seems to be malicious. Please contact support.");
@@ -195,6 +184,8 @@ public class ExportImportController {
             throw new BadRequestException("Error importing tasks. Your file may be corrupted: " + e.getMessage());
         }
     }
+
+
 
     private boolean commentsUsersExist(List<TaskComment> comments) {
         for (TaskComment comment : comments) {

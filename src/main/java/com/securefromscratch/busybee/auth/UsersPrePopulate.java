@@ -1,6 +1,7 @@
 package com.securefromscratch.busybee.auth;
 
 import com.securefromscratch.busybee.exceptions.UserAlreadyExistException;
+import com.securefromscratch.busybee.storage.TasksStorage;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -9,9 +10,13 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 @Component
 public class UsersPrePopulate {
+
+    private static final Logger LOGGER = Logger.getLogger(UsersPrePopulate.class.getName());
+
     @Bean
     CommandLineRunner createUser(UsernamePasswordDetailsService usersDetails, UsersStorage usersStorage) {
         return args -> {
@@ -35,6 +40,8 @@ public class UsersPrePopulate {
             System.out.println(plainPassword);
             System.out.println("Hashed Password: ");
             System.out.println(newAccount.getHashedPassword());
+
+            LOGGER.info("PrePopulated User created: " + newAccount.getUsername());
         };
     }
 }

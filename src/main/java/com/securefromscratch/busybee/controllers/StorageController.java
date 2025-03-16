@@ -55,7 +55,9 @@ public class StorageController {
 
     @GetMapping("/image")
     public ResponseEntity<byte[]> getImage(@RequestParam String img, @AuthenticationPrincipal UserDetails userDetails) throws IOException, TypeValidationException {
-        return serveFile(img, FileStorage.FileType.IMAGE, false, new Username(userDetails.getUsername()));
+        ResponseEntity<byte[]> response = serveFile(img, FileStorage.FileType.IMAGE, false, new Username(userDetails.getUsername()));
+        LOGGER.info("Image file served for user {} , file: {}", userDetails.getUsername(), img);
+        return response;
     }
 
     @GetMapping("/attachment")
@@ -70,7 +72,6 @@ public class StorageController {
                 .filter(timestamp -> timestamp.isAfter(oneHourAgo))
                 .toList());
         if (recentTimestamps.size() >= MAX_FILE_DOWNLOADS_PER_HOUR) {
-            LOGGER.warn("User has exceeded the download limit for file: {}", file);
             throw new TooManyRequestsException("Download limit exceeded.");
         }
 
@@ -80,12 +81,12 @@ public class StorageController {
             recentTimestamps.add(Instant.now());
             userFilesDownloadsTimestamps.put(username.get(), recentTimestamps);
         }
+        LOGGER .info("User {} downloaded file: {}", username.get() ,file);
         return response;
     }
 
     private ResponseEntity<byte[]> serveFile(String filename, FileStorage.FileType expectedType, boolean forceDownload, Username username) throws IOException, SecurityException, AccessDeniedException {
         if (filename == null || filename.isEmpty()) {
-            LOGGER.warn("Invalid filename requested");
             throw new BadRequestException("Invalid filename requested.");
         }
             if (filename.startsWith("uploads/")) { // Remove the uploads/ prefix if it exists
@@ -97,14 +98,12 @@ public class StorageController {
         // Validate file type using FileStorage's identifyType method
         FileStorage.FileType fileType = FileStorage.identifyType(filePath);
         if (((fileType != expectedType) && (fileType == FileStorage.FileType.IMAGE)) || ((expectedType == FileStorage.FileType.OTHER) && (fileType == FileStorage.FileType.OTHER))) {
-            LOGGER.warn("Invalid file type requested: {}", filename);
             throw new SecurityException("Invalid file type requested.");
         }
 
         byte[] fileBytes = Files.readAllBytes(filePath);
         String mimeType = Files.probeContentType(filePath);
         if (mimeType == null || mimeType.isEmpty() || !ALLOWED_MIME.contains(mimeType)) {
-            LOGGER.warn("Invalid MIME type for file: {}", filename);
             throw new SecurityException("Invalid MIME type for file.");
         }
 

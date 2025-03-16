@@ -83,7 +83,7 @@ public class CommentsUploadController {
                 commentFields.commentid()
         );
 
-        LOGGER.info("Task after adding comment: {}", t.get());
+        LOGGER.info("Added comment to task: {}", commentFields.taskid());
         return ResponseEntity.ok(new CreatedCommentId(newComment));
     }
 }

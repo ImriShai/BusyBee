@@ -8,8 +8,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
 
 public class InitialDataGenerator {
+    private static final Logger LOGGER = Logger.getLogger(InitialDataGenerator.class.getName());
+
     public static void fillWithData(List<Task> tasks) throws TypeValidationException {
         List<LocalDateTime> randomPastDates = generateRandomDateTimes(15, 5);
         List<LocalDateTime> randomFutureDates = generateRandomDateTimes(10, -5);
@@ -120,6 +123,7 @@ public class InitialDataGenerator {
         ));
         UUID c3_2 = updatedTask.comments().get(updatedTask.comments().size() - 1).commentId();
         tasks.set(tasks.size() - 1, updatedTask);
+        LOGGER.info("Generated initial data");
     }
 
     public static List<LocalDateTime> generateRandomDateTimes(int numberOfDates, int daysAgo) {

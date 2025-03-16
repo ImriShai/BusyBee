@@ -14,7 +14,7 @@ import java.util.List;
 @Configuration
 public class SerializationConfig {
 
-    private static final Logger logger = LoggerFactory.getLogger(SerializationConfig.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SerializationConfig.class);
 
     @PostConstruct
     public void setSerialFilter() {
@@ -30,7 +30,7 @@ public class SerializationConfig {
                     !(info.serialClass().getName().startsWith("java")&&(info.serialClass().getName().contains("."))) &&
                     !info.serialClass().isArray() &&
             !info.serialClass().getName().startsWith("com.securefromscratch.busybee.")) {
-                logger.error("Rejected class: " + info.serialClass().getName());
+                LOGGER.error("Rejected class: " + info.serialClass().getName());
                 return ObjectInputFilter.Status.REJECTED;
             }
             return ObjectInputFilter.Status.ALLOWED;

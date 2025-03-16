@@ -55,6 +55,7 @@ public class AuthController {
     @GetMapping("/gencsrftoken")
     public ResponseEntity<CsrfTokenResponse> getCsrfToken(HttpServletRequest request, HttpServletResponse response) {
         CsrfToken token = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+        LOGGER.info("Generated CSRF token: {}", token);
         return ResponseEntity.ok(new CsrfTokenResponse(token.getToken(), token.toString(), token.getHeaderName(), token.getParameterName()));
     }
 
