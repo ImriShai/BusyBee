@@ -21,7 +21,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -35,6 +37,15 @@ public class StorageController {
     private FileStorage m_files;
     private final ConcurrentMap<String, List<Instant>> userFilesDownloadsTimestamps = new ConcurrentHashMap<>();
     private static final int MAX_FILE_DOWNLOADS_PER_HOUR = 5;
+    private static final Set<String> ALLOWED_MIME = new HashSet<>() {{
+        add("image/jpeg");
+        add("image/png");
+        add("image/gif");
+        add("application/pdf");
+        add("application/msword");
+        add("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        add("application/rtf");
+    }};
 
     public StorageController() throws IOException {
         // Use an absolute path or ensure the relative path is correct
@@ -77,7 +88,7 @@ public class StorageController {
             LOGGER.warn("Invalid filename requested");
             throw new BadRequestException("Invalid filename requested.");
         }
-        if (filename.startsWith("uploads/")) { // Remove the uploads/ prefix if it exists
+            if (filename.startsWith("uploads/")) { // Remove the uploads/ prefix if it exists
             filename = filename.substring(8);
         }
         Path filePath = m_files.retrieve(filename, username);
@@ -92,7 +103,7 @@ public class StorageController {
 
         byte[] fileBytes = Files.readAllBytes(filePath);
         String mimeType = Files.probeContentType(filePath);
-        if (mimeType == null || mimeType.isEmpty()) {
+        if (mimeType == null || mimeType.isEmpty() || !ALLOWED_MIME.contains(mimeType)) {
             LOGGER.warn("Invalid MIME type for file: {}", filename);
             throw new SecurityException("Invalid MIME type for file.");
         }

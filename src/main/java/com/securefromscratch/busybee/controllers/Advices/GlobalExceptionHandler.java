@@ -60,7 +60,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
-    // Handle custom exceptions
+
     @ExceptionHandler(TooManyRequestsException.class)
     public ResponseEntity<Map<String, String>> handleTooManyRequestsException(TooManyRequestsException ex, WebRequest request) {
         LOGGER.warn("Too many requests: {}", ex.getMessage());
@@ -103,7 +103,7 @@ public class GlobalExceptionHandler {
         Map<String, String> response = new HashMap<>();
         response.put("error", "Not enough space");
         response.put("message", ex.getMessage());
-        return new ResponseEntity<>(response, HttpStatus.INSUFFICIENT_STORAGE);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(TaskNotFoundException.class)

@@ -31,6 +31,7 @@ public class FileStorage {
     private static final String pdfType = "application/pdf";
     private static final String wordType = "application/msword";
     private static final String wordType2 = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    private static final long MIN_FREE_SPACE = 1024 * 1024 * 1024; // 1GB
 
     private static final int UUID_LENGTH = UUID.randomUUID().toString().length();
     private final Path m_storagebox;
@@ -95,7 +96,7 @@ public class FileStorage {
     }
 
 
-    private void validateFile(MultipartFile file) throws TypeValidationException, SecurityException, BadRequestException {
+    private void validateFile(MultipartFile file) throws TypeValidationException, SecurityException, BadRequestException, IOException {
         String filename = file.getOriginalFilename();
         if (filename == null || filename.isBlank() || filename.length() > MAX_FILE_NAME_LENGTH) {
             throw new IllegalArgumentException("Invalid file name");
@@ -111,7 +112,7 @@ public class FileStorage {
         }
 
         String contentType = file.getContentType();
-        if (contentType == null || !isAllowedFileType(contentType)) {
+        if (contentType == null || !isAllowedFileType(contentType) || identifyType(file) == FileType.OTHER) {
             throw new TypeValidationException("Invalid file type");
         }
     }
@@ -120,37 +121,6 @@ public class FileStorage {
         return contentType.startsWith(imgType) || contentType.equals(pdfType) || contentType.equals(wordType) || contentType.equals(wordType2);
     }
 
-    private boolean hasEnoughDiskSpace() {
-        try {
-            FileStore store = Files.getFileStore(m_storagebox);
-            long freeSpace = store.getUsableSpace();
-            long minFreeSpace = 100 * 1024 * 1024; // 100MB
-            return freeSpace >= minFreeSpace;
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Failed to check disk space", e);
-        }
-    }
-
-    private boolean exceedsUploadLimit(String userId) {
-        List<LocalDateTime> uploads = userUploads.computeIfAbsent(userId, k -> new ArrayList<>());
-        LocalDateTime now = LocalDateTime.now();
-        uploads.removeIf(uploadTime -> uploadTime.isBefore(now.minusHours(1)));
-        if (uploads.size() >= MAX_UPLOADS_PER_HOUR) {
-            return true;
-        }
-        uploads.add(now);
-        return false;
-    }
-
-    private void trackUpload(String userId) {
-        List<LocalDateTime> uploads = userUploads.computeIfAbsent(userId, k -> new ArrayList<>());
-        uploads.add(LocalDateTime.now());
-    }
-
-    private static String extractExtension(String filename) {
-        String[] parts = filename.split("\\.");
-        return parts.length == 1 ? "" : ("." + parts[parts.length - 1]);
-    }
 
     public static FileType identifyType(MultipartFile file) throws IOException {
         Tika tika = new Tika();
@@ -177,6 +147,10 @@ public class FileStorage {
         }
         contentType = contentType.toLowerCase();
         if (contentType.startsWith("image/") && magicByteType.startsWith("image")) {
+            // if it svg, return other as it is not supported
+            if (contentType.contains("svg") || magicByteType.contains("svg")) {
+                return FileType.OTHER;
+            }
             return FileType.IMAGE;
         }
         if (contentType.contains("pdf") && magicByteType.contains("pdf")) {
@@ -191,18 +165,59 @@ public class FileStorage {
         return FileType.OTHER;
     }
 
+    private boolean hasEnoughDiskSpace() {
+        try {
+            FileStore store = Files.getFileStore(m_storagebox);
+            long freeSpace = store.getUsableSpace();
+
+            return freeSpace >= MIN_FREE_SPACE;
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed to check disk space", e);
+        }
+    }
+
+    private boolean exceedsUploadLimit(String userId) {
+        List<LocalDateTime> uploads = userUploads.computeIfAbsent(userId, k -> new ArrayList<>());
+        LocalDateTime now = LocalDateTime.now();
+        uploads.removeIf(uploadTime -> uploadTime.isBefore(now.minusHours(1)));
+        return uploads.size() > MAX_UPLOADS_PER_HOUR;
+    }
+
+
+    private void trackUpload(String userId) {
+        List<LocalDateTime> uploads = userUploads.computeIfAbsent(userId, k -> new ArrayList<>());
+        uploads.add(LocalDateTime.now());
+    }
+
+    private static String extractExtension(String filename) {
+        String[] parts = filename.split("\\.");
+        return parts.length == 1 ? "" : ("." + parts[parts.length - 1]);
+    }
+
+
+
     public record StoredFile(Path path, String originalFilename, String storedFilename) {
     }
 
     public Path retrieve(String filename, Username username) throws NoSuchFileException, SecurityException, AccessDeniedException {
-        Path filepath = m_storagebox.resolve(filename);
+        // Validate filename characters and prevent path traversal attacks
+        if (!filename.matches("^[a-zA-Z0-9_()\\-.,+!#@$%^\\[\\]& \\p{IsHebrew}]+$")) {
+            throw new SecurityException("Invalid file name characters detected: " + filename);
+        }
+
+        // Immediately check for path traversal attempts before any other operations
+        if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
+            throw new SecurityException("Path traversal attempt detected: " + filename);
+        }
+
+
+        Path filepath = m_storagebox.resolve(filename).normalize();
 
         // Check if the user is the owner of the file
         if (!isOwner(filepath, username)) {
             throw new org.springframework.security.access.AccessDeniedException("User is not the owner of the file");
         }
 
-        // Prevent path traversal attacks
         if (!filepath.startsWith(m_storagebox) || filename.contains("..")) {
             throw new SecurityException("Path traversal attempt detected: " + filename);
         }

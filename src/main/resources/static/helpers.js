@@ -10,7 +10,6 @@ function getCookie(name) {
 }
 
 async function sendPost(path, jsonOrFormData) {
-    // const csrfToken = getCookie("XSRF-TOKEN");
     try {
 
         const response = await fetch('/gencsrftoken', {
@@ -32,8 +31,6 @@ async function sendPost(path, jsonOrFormData) {
     } catch (error) {
         console.error('Error fetching CSRF token:', error);
     }
-
-
 
     const headers = {
         // "X-XSRF-TOKEN": csrfToken // Include the CSRF token in the headers

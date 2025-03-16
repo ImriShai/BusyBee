@@ -19,11 +19,6 @@ public class CommentText implements Serializable {
         validateComment(value);
         this.text = value;
     }
-
-    public String get() {
-        return text;
-    }
-
     private void validateComment(String value) throws TypeValidationException {
         if (value == null || value.isEmpty()) {
             throw new TypeValidationException("Name cannot be null or empty");
@@ -47,6 +42,11 @@ public class CommentText implements Serializable {
             throw new TypeValidationException("Name contains invalid characters after sanitization");
         }
     }
+
+    public String get() {
+        return text;
+    }
+
     // Custom serialization logic
     @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
