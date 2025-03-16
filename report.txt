@@ -1,0 +1,170 @@
+Targets
+    Occurrences of 'LOGGER' in Project
+Found occurrences in Project  (87 usages found)
+    Unclassified  (87 usages found)
+        BusyBee.main  (87 usages found)
+            com.securefromscratch.busybee.auth  (14 usages found)
+                UsersPrePopulate.java  (2 usages found)
+                    createUser(UsernamePasswordDetailsService, UsersStorage)  (1 usage found)
+                        44 LOGGER.info("PrePopulated User created: " + newAccount.getUsername());
+                    18 private static final Logger LOGGER = Logger.getLogger(UsersPrePopulate.class.getName());
+                UsersStorage.java  (12 usages found)
+                    findByUsername(String)  (1 usage found)
+                        35 LOGGER.info("Finding user by username: {}", username);
+                    createUser(String, String)  (3 usages found)
+                        40 LOGGER.info("Creating user with username: {}", username);
+                        45 LOGGER.error("User already exists: {}", newAccount.getUsername());
+                        49 LOGGER.info("User created successfully: {}", username);
+                    saveUser(UserAccount)  (2 usages found)
+                        54 LOGGER.info("Saving user to file: {}", USERS_FILE);
+                        73 LOGGER.info("User saved successfully");
+                    loadUsers()  (5 usages found)
+                        77 LOGGER.info("Loading users from file: {}", USERS_FILE);
+                        79 LOGGER.warn("Users file not found: {}", USERS_FILE);
+                        99 LOGGER.error("Failed to load user from line: {}", line, e);
+                        102 LOGGER.info("Loaded {} users successfully", m_users.size());
+                        104 LOGGER.error("Failed to load users: {}", e.getMessage(), e);
+                    25 private static final Logger LOGGER = LoggerFactory.getLogger(UsersStorage.class);
+            com.securefromscratch.busybee.config  (2 usages found)
+                SerializationConfig.java  (2 usages found)
+                    setSerialFilter()  (1 usage found)
+                        33 LOGGER.error("Rejected class: " + info.serialClass().getName());
+                    17 private static final Logger LOGGER = LoggerFactory.getLogger(SerializationConfig.class);
+            com.securefromscratch.busybee.controllers  (13 usages found)
+                AuthController.java  (3 usages found)
+                    getCsrfToken(HttpServletRequest, HttpServletResponse)  (1 usage found)
+                        58 LOGGER.info("Generated CSRF token: {}", token);
+                    register(Map<String, String>, HttpServletRequest, HttpSession)  (1 usage found)
+                        68 LOGGER.info("Register request received for user: {}", username);
+                    42 private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
+                CommentsUploadController.java  (2 usages found)
+                    addComment(AddCommentFields, Optional<MultipartFile>, UserDetails)  (1 usage found)
+                        86 LOGGER.info("Added comment to task: {}", commentFields.taskid());
+                    31 private static final Logger LOGGER = LoggerFactory.getLogger(CommentsUploadController.class);
+                ExportImportController.java  (4 usages found)
+                    exportTasks(UserDetails)  (1 usage found)
+                        62 LOGGER.info("Exported {} tasks successfully for user {}", allTasks.size(), username.get());
+                    importTasks(MultipartFile, UserDetails)  (2 usages found)
+                        72 LOGGER.info("Import request received from user: {}", username.get());
+                        153 LOGGER.info("Tasks imported successfully - {} tasks has been added to {}", taskList.size(), username.get());
+                    34 private static final Logger LOGGER = LoggerFactory.getLogger(ExportImportController.class);
+                StorageController.java  (3 usages found)
+                    getImage(String, UserDetails)  (1 usage found)
+                        59 LOGGER.info("Image file served for user {} , file: {}", userDetails.getUsername(), img);
+                    getAttachment(String, UserDetails)  (1 usage found)
+                        84 LOGGER .info("User {} downloaded file: {}", username.get() ,file);
+                    34 private static final Logger LOGGER = LoggerFactory.getLogger(StorageController.class);
+                TasksController.java  (1 usage found)
+                    32 private static final Logger LOGGER = LoggerFactory.getLogger(TasksController.class);
+            com.securefromscratch.busybee.controllers.Advices  (24 usages found)
+                GlobalExceptionHandler.java  (23 usages found)
+                    handleNoSuchFileException(NoSuchFileException, WebRequest)  (1 usage found)
+                        29 LOGGER.warn("File not found: {}", ex.getMessage());
+                    handleSecurityException(SecurityException, WebRequest)  (1 usage found)
+                        38 LOGGER.error("Security error: {}", ex.getMessage());
+                    handleTypeValidationException(TypeValidationException, WebRequest)  (1 usage found)
+                        47 LOGGER.warn("Invalid file type: {}", ex.getMessage());
+                    handleIllegalArgumentException(IllegalArgumentException, WebRequest)  (1 usage found)
+                        56 LOGGER.error("Invalid argument: {}", ex.getMessage());
+                    handleTooManyRequestsException(TooManyRequestsException, WebRequest)  (1 usage found)
+                        66 LOGGER.warn("Too many requests: {}", ex.getMessage());
+                    handlePayloadTooLargeException(PayloadTooLargeException, WebRequest)  (1 usage found)
+                        75 LOGGER.warn("Payload too large: {}", ex.getMessage());
+                    handleBadRequestException(BadRequestException, WebRequest)  (1 usage found)
+                        84 LOGGER.warn("Bad request: {}", ex.getMessage());
+                    handleConflictException(ConflictException, WebRequest)  (1 usage found)
+                        93 LOGGER.warn("Conflict: {}", ex.getMessage());
+                    handleNotEnoughSpaceException(NotEnoughSpaceException, WebRequest)  (1 usage found)
+                        102 LOGGER.error("Not enough space: {}", ex.getMessage());
+                    handleTaskNotFoundException(TaskNotFoundException, WebRequest)  (1 usage found)
+                        111 LOGGER.error("Task not found: {}", ex.getMessage());
+                    handleUserNotFoundException(UserNotFoundException, WebRequest)  (1 usage found)
+                        120 LOGGER.error("User not found: {}", ex.getMessage());
+                    handleUserAlreadyExistException(UserAlreadyExistException, WebRequest)  (1 usage found)
+                        129 LOGGER.error("User already exists: {}", ex.getMessage());
+                    handleInvalidCredentialsException(InvalidCredentialsException, WebRequest)  (1 usage found)
+                        138 LOGGER.error("Invalid credentials: {}", ex.getMessage());
+                    handleInvalidTokenException(InvalidTokenException, WebRequest)  (1 usage found)
+                        147 LOGGER.error("Invalid token: {}", ex.getMessage());
+                    handleExpiredTokenException(ExpiredTokenException, WebRequest)  (1 usage found)
+                        156 LOGGER.error("Expired token: {}", ex.getMessage());
+                    handleAccessDeniedException(AccessDeniedException, WebRequest)  (1 usage found)
+                        165 LOGGER.error("Access denied: {}", ex.getMessage());
+                    handleIllegalStateException(IllegalStateException, WebRequest)  (1 usage found)
+                        180 LOGGER.error("Illegal state: {}", ex.getMessage());
+                    handleInvalidClassException(InvalidClassException, WebRequest)  (1 usage found)
+                        189 LOGGER.error("Invalid class: {}", ex.getMessage());
+                    handleNoResourceFoundException(NoResourceFoundException, WebRequest)  (1 usage found)
+                        197 LOGGER.error("No resource found: {}", ex.getMessage());
+                    handleUserDoesNotExistException(UserDoesNotExistException, WebRequest)  (1 usage found)
+                        205 LOGGER.error("User does not exist: {}", ex.getMessage());
+                    handleAllExceptions(Exception, WebRequest)  (2 usages found)
+                        218 LOGGER.warn("Invalid file type: {}", ex.getCause().getMessage());
+                        225 LOGGER.error("An error occurred: {}", ex.getMessage());
+                    24 private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+                SensitiveDataMaskingAdviceController.java  (1 usage found)
+                    18 private static final Logger LOGGER = LoggerFactory.getLogger(SensitiveDataMaskingAdviceController.class);
+            com.securefromscratch.busybee.storage  (34 usages found)
+                FileStorage.java  (12 usages found)
+                    FileStorage(Path)  (1 usage found)
+                        52 LOGGER.info("FileStorage initialized with directory: " + m_storagebox);
+                    initFiles(List<Task>)  (1 usage found)
+                        70 LOGGER.info("Initialized file: " + path + " with original filename: " + originalFilename);
+                    store(MultipartFile, String, List<Username>)  (1 usage found)
+                        94 LOGGER.info("Stored file: " + filepath + " with original filename: " + originalFilename);
+                    validateFile(MultipartFile)  (1 usage found)
+                        116 LOGGER.info("Validated file: " + filename + " with content type: " + contentType);
+                    identifyType(MultipartFile)  (1 usage found)
+                        128 LOGGER.info("Identified file type: " + fileType + " for content type: " + contentType + " and magic byte type: " + magicByteType);
+                    identifyType(Path)  (1 usage found)
+                        138 LOGGER.info("Identified file type: " + fileType + " for path: " + path);
+                    hasEnoughDiskSpace()  (1 usage found)
+                        174 LOGGER.info("Disk space check: " + freeSpace + " bytes available, has enough space: " + hasSpace);
+                    exceedsUploadLimit(String)  (1 usage found)
+                        186 LOGGER.info("Upload limit check for user: " + userId + ", exceeds limit: " + exceedsLimit);
+                    trackUpload(String)  (1 usage found)
+                        193 LOGGER.info("Tracked upload for user: " + userId + ", total uploads in the last hour: " + uploads.size());
+                    retrieve(String, Username)  (1 usage found)
+                        225 LOGGER.info("Retrieved file: " + filepath + " for user: " + username.get());
+                    retrieveOriginalFilename(Path)  (1 usage found)
+                        234 LOGGER.info("Retrieved original filename: " + originalFilename + " for path: " + path);
+                    22 private static final Logger LOGGER = Logger.getLogger(FileStorage.class.getName());
+                InitialDataGenerator.java  (2 usages found)
+                    fillWithData(List<Task>)  (1 usage found)
+                        126 LOGGER.info("Generated initial data");
+                    14 private static final Logger LOGGER = Logger.getLogger(InitialDataGenerator.class.getName());
+                TasksStorage.java  (20 usages found)
+                    TasksStorage()  (1 usage found)
+                        29 LOGGER.severe("Exception during initialization: " + e.getMessage());
+                    getAll()  (1 usage found)
+                        36 LOGGER.info("Fetching all tasks");
+                    getTasks(Username)  (1 usage found)
+                        41 LOGGER.info("Fetching tasks related to: " + related);
+                    add(String, String, String, String[])  (1 usage found)
+                        46 LOGGER.info("Adding new task with name: " + name);
+                    add(String, String, LocalDate, String, String[])  (1 usage found)
+                        52 LOGGER.info("Adding new task with name: " + name + " and due date: " + dueDate);
+                    add(String, String, LocalDate, LocalTime, String, String[])  (1 usage found)
+                        58 LOGGER.info("Adding new task with name: " + name + ", due date: " + dueDate + " and due time: " + dueTime);
+                    markDone(UUID, boolean)  (3 usages found)
+                        64 LOGGER.info("Marking task as " + done + " with ID: " + taskid);
+                        72 LOGGER.info("Task already marked as done " + done + ": " + taskid);
+                        80 LOGGER.info("Task marked as done: " + taskid);
+                    add(Task)  (2 usages found)
+                        91 LOGGER.info("Adding new task: " + newTask);
+                        96 LOGGER.info("Task added successfully: " + newTask.taskid());
+                    loadTasks()  (2 usages found)
+                        101 LOGGER.info("Loading tasks from file");
+                        105 LOGGER.warning("Exception while loading tasks: " + e.getMessage());
+                    saveTasks(List<Task>)  (1 usage found)
+                        111 LOGGER.info("Saving tasks to file");
+                    addComment(Task, String, Optional<String>, Optional<String>, Optional<String>, String, Optional<UUID>)  (2 usages found)
+                        119 LOGGER.info("Adding comment with image/attachment to task: " + task.taskid());
+                        127 LOGGER.info("Comment added successfully to task: " + task.taskid());
+                    find(UUID)  (1 usage found)
+                        139 LOGGER.info("Finding task with ID: " + taskid);
+                    isTaskNameExists(String)  (1 usage found)
+                        144 LOGGER.info("Checking if task name exists: " + s);
+                    isTaskIdExists(UUID)  (1 usage found)
+                        159 LOGGER.info("Checking if task ID exists: " + taskid);
+                    16 private static final Logger LOGGER = Logger.getLogger(TasksStorage.class.getName());
